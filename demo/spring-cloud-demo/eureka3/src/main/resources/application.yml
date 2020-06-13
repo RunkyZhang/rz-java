@@ -1,0 +1,21 @@
+server:
+  port: 8763
+
+spring:
+  application:
+    name: eureka
+#  profiles:
+#    active: server3
+
+eureka:
+  instance:
+    hostname: eureka3
+  client:
+    # 表示是否注册自身到eureka服务器
+    # register-with-eureka: false
+    # 是否从eureka上获取注册信息
+    # fetch-registry: false
+    serviceUrl:
+#      defaultZone: http://${eureka.instance.hostname}:8761/eureka/,http://${eureka.instance.hostname}:${server.port}/eureka/,http://${eureka.instance.hostname}:8763/eureka/
+      # 必须是域名才能互相数据备份
+      defaultZone: http://eureka1:8761/eureka/,http://eureka2:8762/eureka/
