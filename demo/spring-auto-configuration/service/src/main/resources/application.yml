@@ -1,0 +1,7 @@
+server:
+  port: 8080
+
+demo:
+  auto:
+    name: wang2mazi
+    age: 25
