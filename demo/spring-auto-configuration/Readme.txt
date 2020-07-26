@@ -16,3 +16,5 @@ Resource和Autowired差不多：区别是Resource是JDK的标签，Autowired是S
 @ConditionalOnResource：类路径是否有指定的值
 @ConditionalOnSingleCandidate：当指定Bean在SpringIoc容器内只有一个，或者虽然有多个但是指定首选的Bean
 @ConditionalOnWebApplication：当前项目是Web项目的条件
+
+ApplicationContextAware：就是为了获取ApplicationContext对象

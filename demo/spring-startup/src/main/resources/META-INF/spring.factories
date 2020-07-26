@@ -1,0 +1,6 @@
+org.springframework.context.ApplicationContextInitializer=\
+    com.rz.demo.startup.initializer.DogApplicationContextInitializer
+org.springframework.context.ApplicationListener=\
+    com.rz.demo.startup.listener.DogApplicationListener
+org.springframework.boot.SpringApplicationRunListener=\
+    com.rz.demo.startup.runlistener.DogSpringApplicationRunListener
