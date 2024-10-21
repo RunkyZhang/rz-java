@@ -2,15 +2,22 @@
         PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.vf.user.base.infrastructure.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="com.vf.user.base.api.entity.UserEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="phone_no" jdbcType="VARCHAR" property="phoneNo"/>
+        <result column="e_mail" jdbcType="VARCHAR" property="eMail"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="source" jdbcType="INTEGER" property="source"/>
+        <result column="mode" jdbcType="INTEGER" property="mode"/>
 
-    <resultMap id="userResultMap" type="com.vf.user.base.api.entity.UserEntity">
-        <id property="userId" column="user_id" />
-        <result property="username" column="user_name"/>
-        <result property="age" column="age"/>
+        <result column="create_at" jdbcType="TIMESTAMP" property="createAt"/>
+        <result column="modify_at" jdbcType="TIMESTAMP" property="modifyAt"/>
+        <result column="version" jdbcType="INTEGER" property="version"/>
+        <result column="deleted" jdbcType="TINYINT" property="deleted"/>
+        <result column="operator" jdbcType="VARCHAR" property="operator"/>
     </resultMap>
 
-
-    <select id="getByUserId"  resultMap="userResultMap">
-        select * from users where user_id = #{userId}
+    <select id="getByUserId" resultMap="BaseResultMap">
+        select * from vf_user where id = #{userId}
     </select>
 </mapper>

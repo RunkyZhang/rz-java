@@ -10,7 +10,7 @@ CREATE TABLE `vf_user`
     `create_at` timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at` timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`   int          NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`    tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`  varchar(15)  NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -21,6 +21,7 @@ CREATE TABLE `vf_user`
 
 ) DEFAULT CHARACTER SET=utf8mb4 AUTO_INCREMENT=100000000 COMMENT='用户注册表';
 
+/*
 CREATE TABLE `vf_user_device`
 (
     `user_id`      bigint       NOT NULL DEFAULT 0 COMMENT '用户Id',
@@ -33,7 +34,7 @@ CREATE TABLE `vf_user_device`
     `create_at`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`      int          NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`       tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`     varchar(15)  NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -55,7 +56,7 @@ CREATE TABLE `vf_user_union`
     `create_at`    timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at`    timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`      int           NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`       tinyint       NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`     varchar(51)   NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -77,7 +78,7 @@ CREATE TABLE `vf_user_info`
     `create_at`    timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at`    timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`      int           NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`       tinyint       NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`     varchar(15)   NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -101,7 +102,7 @@ CREATE TABLE `vf_user_asset`
     `create_at` timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at` timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`   int         NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`    tinyint     NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`  varchar(51) NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -125,7 +126,7 @@ CREATE TABLE `vf_user_number`
     `create_at` timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `modify_at` timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
     `version`   int         NOT NULL DEFAULT 0 COMMENT '版本号并发用',
-    `is_del`    tinyint     NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `deleted`   tinyint      NOT NULL DEFAULT 0 COMMENT '是否删除',
     `operator`  varchar(51) NOT NULL DEFAULT '' COMMENT '操作人',
 
     PRIMARY KEY (`id`),
@@ -134,3 +135,4 @@ CREATE TABLE `vf_user_number`
     KEY         `idx_source` (`source`),
     KEY         `idx_create_at` (`create_at`)
 ) DEFAULT CHARACTER SET=utf8mb4 AUTO_INCREMENT=1000 COMMENT='用户分数表';
+*/

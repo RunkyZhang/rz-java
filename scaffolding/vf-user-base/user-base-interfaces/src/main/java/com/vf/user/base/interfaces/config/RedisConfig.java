@@ -15,8 +15,8 @@ public class RedisConfig {
         Config config = new Config();
         config.useSingleServer()
                 //可以用"rediss://"来启用SSL连接，前缀必须是redis:// or rediss://
-                .setAddress("redis://10.99.0.242:6379")
-                .setPassword("dTxSX5tZeMuHiG8v");
+                //.setPassword("dTxSX5tZeMuHiG8v")
+                .setAddress("redis://localhost:6379");
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonJacksonCodec jsonJacksonCodec = new JsonJacksonCodec(objectMapper);

@@ -7,9 +7,12 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class UserEntity extends EntityBase {
-    private int userId;
-    private String username;
-    private int age;
+    private long id;
+    private String phoneNo;
+    private String eMail;
+    private int status;
+    private int source;
+    private int mode;
 }
 
 

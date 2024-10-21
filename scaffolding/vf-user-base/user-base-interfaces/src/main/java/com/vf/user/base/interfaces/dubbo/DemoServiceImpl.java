@@ -14,9 +14,16 @@ public class DemoServiceImpl implements DemoService {
     @Resource
     private UserService userService;
 
+    /**
+     * 根据名字say hello
+     *
+     * @return name + hello
+     * telnet localhost 15511
+     * invoke com.vf.user.base.api.service.DemoService.sayHelloByName({name:"111"})
+     */
     @Override
     public RpcResult<String> sayHelloByName(SayHelloByNameRequestDto requestDto) {
-        UserEntity user = userService.getByUserId(1);
+        UserEntity user = userService.getByUserId(100000000);
         return RpcResult.success(requestDto.getName() + ",hello!---" + user.toString());
     }
 }

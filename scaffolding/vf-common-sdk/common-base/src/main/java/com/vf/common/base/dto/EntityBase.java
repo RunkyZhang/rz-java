@@ -23,5 +23,5 @@ public class EntityBase implements Serializable {
     /**
      * Column: deleted Remark: 逻辑删除
      */
-    protected Integer isDel = 0;
+    protected boolean deleted = false;
 }
