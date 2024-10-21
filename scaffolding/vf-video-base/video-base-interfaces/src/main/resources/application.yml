@@ -9,9 +9,9 @@ spring:
   datasource:
       type: com.alibaba.druid.pool.DruidDataSource
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://10.99.0.242:3306/user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
-      username: admin
-      password: dTxSX5tZeMuHiG8v
+      url: jdbc:mysql://localhost:3306/db_user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+      username: root
+      password: 12345678
 #================mybatis
 mybatis:
   mapper-locations[0]: classpath*:mapper/**/*.xml
@@ -20,9 +20,9 @@ dubbo:
   application:
     name: vf-video-base
   registry:
-    address: nacos://10.99.0.242:8848
+    address: nacos://localhost:8848
     username: admin
-    password: dTxSX5tZeMuHiG8v
+    password: admin
   scan:
     base-packages: com.vf.video.base.interfaces
   protocol:

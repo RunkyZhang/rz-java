@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+info:
+  app:
+    aaa: bbb
+    name: rz spring startup
+    java:
+      version: 10
+    type: Spring Boot

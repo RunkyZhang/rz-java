@@ -1,32 +1,34 @@
 package com.vf.video.base.domain;
 
-import com.vf.video.base.api.entity.UserEntity;
+import com.vf.video.base.api.entity.VideoEntity;
 import com.vf.video.base.infrastructure.RedisMapper;
-import com.vf.video.base.infrastructure.mapper.UserMapper;
+import com.vf.video.base.infrastructure.mapper.VideoMapper;
 import org.redisson.api.RBucket;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserDomain {
     @Resource
-    private UserMapper userMapper;
+    private VideoMapper videoMapper;
     @Resource
     private RedisMapper redisMapper;
 
-    public UserEntity getByUserId(int userId) {
-        RBucket<UserEntity> rBucket = redisMapper.getDefaultRedis().getBucket("ub.ue:" + userId);
-        UserEntity userEntity = rBucket.get();
-        if (null == userEntity) {
-            userEntity = userMapper.getByUserId(userId);
-            if(null == userEntity) {
+    public VideoEntity getByVideoId(long videoId) {
+        RBucket<VideoEntity> rBucket = redisMapper.getDefaultRedis().getBucket("vb.ve:" + videoId);
+        VideoEntity videoEntity = rBucket.get();
+        if (null == videoEntity) {
+            videoEntity = videoMapper.getByVideoId(videoId);
+            if (null == videoEntity) {
                 return null;
             }
 
-            redisMapper.getDefaultRedis().getBucket("ub.ue:" + userId).set(userEntity);
+            rBucket.set(videoEntity);
+            rBucket.expire(60, TimeUnit.SECONDS);
         }
 
-        return userEntity;
+        return videoEntity;
     }
 }

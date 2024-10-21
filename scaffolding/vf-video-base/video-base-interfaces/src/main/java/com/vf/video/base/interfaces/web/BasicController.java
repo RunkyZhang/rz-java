@@ -16,7 +16,7 @@
 
 package com.vf.video.base.interfaces.web;
 
-import com.vf.video.base.application.UserService;
+import com.vf.video.base.application.VideoService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,13 +31,13 @@ import javax.annotation.Resource;
 @Controller
 public class BasicController {
     @Resource
-    private UserService userService;
+    private VideoService userService;
 
     // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + userService.getByUserId(1);
+        return "Hello " + userService.getByVideoId(1000);
     }
 
     // http://127.0.0.1:8080/user
