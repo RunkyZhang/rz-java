@@ -6,11 +6,13 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @EnableDubbo
 @SpringBootApplication
 @ComponentScan(basePackages={"com.vf.user.base", "com.vf.common.architecture"})
 @MapperScan(basePackages = "com.vf.user.base.infrastructure.mapper")
+@EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
 public class UserBaseApplication {
     public static void main(String[] args) {
         SpringApplication.run(UserBaseApplication.class, args);

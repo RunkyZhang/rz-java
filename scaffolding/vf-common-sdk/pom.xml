@@ -96,6 +96,26 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>3.17.0</version>
             </dependency>
+
+            <!-- aop -->
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjweaver</artifactId>
+                <version>1.9.22.1</version>
+<!--                <scope>runtime</scope>-->
+            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.aspectj</groupId>-->
+<!--                <artifactId>aspectjrt</artifactId>-->
+<!--                <version>1.9.22.1</version>-->
+<!--&lt;!&ndash;                <scope>runtime</scope>&ndash;&gt;-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.assertj</groupId>-->
+<!--                <artifactId>assertj-core</artifactId>-->
+<!--                <version>3.26.3</version>-->
+<!--&lt;!&ndash;                <scope>test</scope>&ndash;&gt;-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 </project>

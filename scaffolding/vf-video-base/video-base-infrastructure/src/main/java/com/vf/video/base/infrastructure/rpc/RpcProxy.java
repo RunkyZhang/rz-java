@@ -1,6 +1,7 @@
 package com.vf.video.base.infrastructure.rpc;
 
 import com.vf.common.base.Helper;
+import com.vf.common.base.annotation.AccessLog;
 import com.vf.common.base.dto.RpcResult;
 import com.vf.user.base.api.dto.SayHelloByNameRequestDto;
 import com.vf.user.base.api.service.DemoService;
@@ -12,6 +13,7 @@ public class RpcProxy {
     @DubboReference
     private DemoService demoService;
 
+    @AccessLog(sampleRate = 1000, strategyName = "DefaultAccessLogStrategy")
     public String sayHello(String name) {
         SayHelloByNameRequestDto requestDto = new SayHelloByNameRequestDto();
         requestDto.setName(name);
