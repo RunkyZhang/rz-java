@@ -1,0 +1,32 @@
+server:
+  port: 9090
+#================spring
+spring:
+  application:
+    name: vf-video-base
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+      type: com.alibaba.druid.pool.DruidDataSource
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://10.99.0.242:3306/user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+      username: admin
+      password: dTxSX5tZeMuHiG8v
+#================mybatis
+mybatis:
+  mapper-locations[0]: classpath*:mapper/**/*.xml
+#================dubbo
+dubbo:
+  application:
+    name: vf-video-base
+  registry:
+    address: nacos://10.99.0.242:8848
+    username: admin
+    password: dTxSX5tZeMuHiG8v
+  scan:
+    base-packages: com.vf.video.base.interfaces
+  protocol:
+    name: dubbo
+    port: 16622
+  provider:
+    filter: dubboUserConfig
