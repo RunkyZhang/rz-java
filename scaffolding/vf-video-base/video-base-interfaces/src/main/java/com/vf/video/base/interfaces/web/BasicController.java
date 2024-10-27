@@ -17,6 +17,8 @@
 package com.vf.video.base.interfaces.web;
 
 import com.vf.video.base.application.VideoService;
+import com.vf.video.base.infrastructure.ConfigSource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +34,17 @@ import javax.annotation.Resource;
 public class BasicController {
     @Resource
     private VideoService userService;
+    @Resource
+    private ConfigSource configSource;
+
+    @Value("${useLocalCache:false}")
+    private boolean useLocalCache;
+
+    @RequestMapping("")
+    @ResponseBody
+    public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
+    }
 
     // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("/hello")

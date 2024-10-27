@@ -24,6 +24,7 @@ Http启动：http->redis->mysql
   http://localhost:8080/hello
 配置中心
   需要使用bootstrap.yml配置文件。使用该文件必须必须，使用启动参数加入-Dspring.cloud.bootstrap.enabled=true
+  http://localhost:8080
 
 
 vf-video======
@@ -32,7 +33,9 @@ dubbo启动：dubbo->redis->mysql
   invoke com.vf.video.base.api.service.SomeService.sayHelloByName({name:"111"})
 nacos注册中心调用：http->redis->mysql
                      ->dubbo(vf-user)->redis->mysql
-http://localhost:9090/hello
-
+  http://localhost:9090/hello
+配置中心
+  需要使用bootstrap.yml配置文件。使用该文件必须必须，使用启动参数加入-Dspring.cloud.bootstrap.enabled=true
+  http://localhost:9090
 
 

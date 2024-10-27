@@ -28,7 +28,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- 自通用 -->
+            <!-- 通用工程 -->
             <dependency>
                 <groupId>com.vf</groupId>
                 <artifactId>common-base</artifactId>
@@ -69,13 +69,6 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <!-- nacos config -->
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                <version>2021.0.1.0</version>
             </dependency>
 
             <!-- redis -->
