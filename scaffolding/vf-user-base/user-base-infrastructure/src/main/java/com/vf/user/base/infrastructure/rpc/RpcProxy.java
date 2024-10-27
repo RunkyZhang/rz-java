@@ -20,4 +20,6 @@ public class RpcProxy {
 //        RpcResult<String> result = demoService.sayHelloByName(requestDto);
 //        return Helper.getResultData(result, true);
 //    }
+
+
 }

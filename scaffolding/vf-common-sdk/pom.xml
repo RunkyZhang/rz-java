@@ -39,6 +39,13 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- nacos -->
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>1.4.1</version>
+            </dependency>
+
             <!-- dubbo -->
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
@@ -51,11 +58,11 @@
                 <version>${dubbo.version}</version>
             </dependency>
 
-            <!-- nacos -->
+            <!-- nacos config -->
             <dependency>
-                <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-client</artifactId>
-                <version>1.4.1</version>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                <version>2021.0.1.0</version>
             </dependency>
 
             <!-- lombok -->
@@ -104,18 +111,6 @@
                 <version>1.9.22.1</version>
 <!--                <scope>runtime</scope>-->
             </dependency>
-<!--            <dependency>-->
-<!--                <groupId>org.aspectj</groupId>-->
-<!--                <artifactId>aspectjrt</artifactId>-->
-<!--                <version>1.9.22.1</version>-->
-<!--&lt;!&ndash;                <scope>runtime</scope>&ndash;&gt;-->
-<!--            </dependency>-->
-<!--            <dependency>-->
-<!--                <groupId>org.assertj</groupId>-->
-<!--                <artifactId>assertj-core</artifactId>-->
-<!--                <version>3.26.3</version>-->
-<!--&lt;!&ndash;                <scope>test</scope>&ndash;&gt;-->
-<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 </project>

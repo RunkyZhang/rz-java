@@ -22,13 +22,13 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- spring-boot和通用工程（common-architecture）的版本保持一致 -->
         <spring-boot.version>2.6.13</spring-boot.version>
-        <dubbo.version>2.7.8</dubbo.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- 自通用 -->
+            <!-- 通用工程 -->
             <dependency>
                 <groupId>com.vf</groupId>
                 <artifactId>common-base</artifactId>
@@ -69,13 +69,6 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <!-- nacos config -->
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                <version>2021.0.1.0</version>
             </dependency>
 
             <!-- redis -->

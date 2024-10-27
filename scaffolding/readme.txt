@@ -22,6 +22,9 @@ Dubbo启动：dubbo->redis->mysql
  invoke com.vf.user.base.api.service.DemoService.sayHelloByName({name:"111"})
 Http启动：http->redis->mysql
   http://localhost:8080/hello
+配置中心
+  需要使用bootstrap.yml配置文件。使用该文件必须必须，使用启动参数加入-Dspring.cloud.bootstrap.enabled=true
+
 
 vf-video======
 dubbo启动：dubbo->redis->mysql

@@ -19,9 +19,9 @@ package com.vf.user.base.interfaces.web;
 import com.vf.common.base.dto.RpcResult;
 import com.vf.user.base.api.entity.UserEntity;
 import com.vf.user.base.application.UserService;
+import com.vf.user.base.infrastructure.ConfigSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -35,15 +35,21 @@ import javax.annotation.Resource;
 public class BasicController {
     @Resource
     private UserService userService;
+    @Resource
+    private ConfigSource configSource;
 
-    @Value("${aaa:}")
-    private String aaa;
+    @Value("${useLocalCache:false}")
+    private boolean useLocalCache;
+//    @Value("${userName:1111}")
+//    private String userName;
+//    @Value("${serverAddress:11。11。11。11}")
+//    private String serverAddress;
 
     // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("")
     @ResponseBody
     public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + name + "===" + aaa;
+        return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
     }
 
     @RequestMapping("/hello")

@@ -12,20 +12,14 @@
     <artifactId>user-base-infrastructure</artifactId>
 
     <dependencies>
+        <!-- 通用工程 -->
         <dependency>
             <groupId>com.vf</groupId>
             <artifactId>common-architecture</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.vf</groupId>
             <artifactId>user-base-api</artifactId>
-        </dependency>
-
-        <!-- spring -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- redis -->
