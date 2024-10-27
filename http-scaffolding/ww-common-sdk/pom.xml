@@ -17,8 +17,9 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>2.6.13</spring-boot.version>
-        <dubbo.version>2.7.8</dubbo.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
+        <alibaba.cloud.version>2021.0.1.0</alibaba.cloud.version>
+        <!--        <dubbo.version>2.7.8</dubbo.version>-->
     </properties>
 
     <dependencyManagement>
@@ -46,23 +47,18 @@
                 <version>1.4.1</version>
             </dependency>
 
-            <!-- dubbo -->
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo</artifactId>
-                <version>${dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-registry-nacos</artifactId>
-                <version>${dubbo.version}</version>
-            </dependency>
-
             <!-- nacos config -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                <version>2021.0.1.0</version>
+                <version>${alibaba.cloud.version}</version>
+            </dependency>
+
+            <!-- nacos discovery -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${alibaba.cloud.version}</version>
             </dependency>
 
             <!-- lombok -->
@@ -109,7 +105,7 @@
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjweaver</artifactId>
                 <version>1.9.22.1</version>
-<!--                <scope>runtime</scope>-->
+                <!--                <scope>runtime</scope>-->
             </dependency>
         </dependencies>
     </dependencyManagement>

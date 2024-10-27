@@ -23,18 +23,22 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
-@Controller
+@RestController
 public class BasicController {
     @Resource
     private VideoService userService;
     @Resource
     private ConfigSource configSource;
+    @Resource
+    private RestTemplate restTemplate;
 
     @Value("${useLocalCache:false}")
     private boolean useLocalCache;
@@ -49,6 +53,9 @@ public class BasicController {
     @RequestMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + userService.getByVideoId(1000);
+        return restTemplate.getForObject("http://ww-user-base/echo/" + "name", String.class);
+
+
+//        return "Hello " + userService.getByVideoId(1000);
     }
 }

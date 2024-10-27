@@ -22,16 +22,14 @@ import com.ww.user.base.application.UserService;
 import com.ww.user.base.infrastructure.ConfigSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
-@Controller
+@RestController
 public class BasicController {
     @Resource
     private UserService userService;
@@ -57,5 +55,10 @@ public class BasicController {
     public RpcResult<String> hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         UserEntity user = userService.getByUserId(100000000);
         return RpcResult.success(name + ",hello!---" + user.toString());
+    }
+
+    @RequestMapping(value = "/echo/{string}", method = RequestMethod.GET)
+    public String echo(@PathVariable String string) {
+        return "wwwwwwwwwwHello Nacos Discovery " + string;
     }
 }

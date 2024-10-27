@@ -1,23 +1,22 @@
 package com.ww.video.base.infrastructure.rpc;
 
-import com.ww.common.base.Helper;
 import com.ww.common.base.annotation.AccessLog;
-import com.ww.common.base.dto.RpcResult;
-import com.ww.user.base.api.dto.SayHelloByNameRequestDto;
-import com.ww.user.base.api.service.DemoService;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import javax.annotation.Resource;
 
 @Service
 public class RpcProxy {
-    @DubboReference
-    private DemoService demoService;
+    @Resource
+    private RestTemplate restTemplate;
 
     @AccessLog(sampleRate = 1000, strategyName = "DefaultAccessLogStrategy")
     public String sayHello(String name) {
-        SayHelloByNameRequestDto requestDto = new SayHelloByNameRequestDto();
-        requestDto.setName(name);
-        RpcResult<String> result = demoService.sayHelloByName(requestDto);
-        return Helper.getResultData(result, true);
+        return restTemplate.getForObject("http://ww-user-base/echo/" + name, String.class);
+
+//        RpcResult<String> result = (RpcResult<String>)restTemplate.getForObject("http://ww-user-base/hello", RpcResult.class);
+//
+//        return name + result.toString();
     }
 }
