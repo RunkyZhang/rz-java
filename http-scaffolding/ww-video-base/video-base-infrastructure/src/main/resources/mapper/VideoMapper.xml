@@ -1,0 +1,27 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ww.video.base.infrastructure.mapper.VideoMapper">
+    <resultMap id="BaseResultMap" type="com.ww.video.base.api.entity.VideoEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="icon" jdbcType="VARCHAR" property="icon"/>
+        <result column="url" jdbcType="VARCHAR" property="url"/>
+        <result column="category_id" jdbcType="INTEGER" property="categoryId"/>
+        <result column="sub_category_id" jdbcType="INTEGER" property="subCategoryId"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="user_tags_json" jdbcType="VARCHAR" property="userTagsJson"/>
+        <result column="system_tags_json" jdbcType="VARCHAR" property="systemTagsJson"/>
+
+        <result column="create_at" jdbcType="TIMESTAMP" property="createAt"/>
+        <result column="modify_at" jdbcType="TIMESTAMP" property="modifyAt"/>
+        <result column="version" jdbcType="INTEGER" property="version"/>
+        <result column="deleted" jdbcType="TINYINT" property="deleted"/>
+        <result column="operator" jdbcType="VARCHAR" property="operator"/>
+    </resultMap>
+
+    <select id="getByVideoId" resultMap="BaseResultMap">
+        select * from vf_video where id = #{videoId}
+    </select>
+</mapper>
