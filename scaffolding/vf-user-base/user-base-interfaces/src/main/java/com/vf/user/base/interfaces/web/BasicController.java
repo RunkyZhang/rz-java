@@ -16,6 +16,9 @@
 
 package com.vf.user.base.interfaces.web;
 
+import com.vf.common.base.dto.RpcResult;
+import com.vf.user.base.api.entity.UserEntity;
+import com.vf.user.base.application.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,18 +26,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.annotation.Resource;
+
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
 @Controller
 public class BasicController {
+    @Resource
+    private UserService userService;
+
     @Value("${aaa:}")
     private String aaa;
 
     // http://127.0.0.1:8080/hello?name=lisi
+    @RequestMapping("")
+    @ResponseBody
+    public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        return "Hello " + name + "===" + aaa;
+    }
+
     @RequestMapping("/hello")
     @ResponseBody
-    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + name + "===" + aaa;
+    public RpcResult<String> hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        UserEntity user = userService.getByUserId(100000000);
+        return RpcResult.success(name + ",hello!---" + user.toString());
     }
 }

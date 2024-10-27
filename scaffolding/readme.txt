@@ -18,13 +18,15 @@ Password:12345678
 
 vf-user=======
 Dubbo启动：dubbo->redis->mysql
-telnet localhost 15511
-invoke com.vf.user.base.api.service.DemoService.sayHelloByName({name:"111"})
+ telnet localhost 15511
+ invoke com.vf.user.base.api.service.DemoService.sayHelloByName({name:"111"})
+Http启动：http->redis->mysql
+  http://localhost:8080/hello
 
 vf-video======
 dubbo启动：dubbo->redis->mysql
-telnet localhost 16622
-invoke com.vf.video.base.api.service.SomeService.sayHelloByName({name:"111"})
+  telnet localhost 16622
+  invoke com.vf.video.base.api.service.SomeService.sayHelloByName({name:"111"})
 nacos注册中心调用：http->redis->mysql
                      ->dubbo(vf-user)->redis->mysql
 http://localhost:9090/hello
