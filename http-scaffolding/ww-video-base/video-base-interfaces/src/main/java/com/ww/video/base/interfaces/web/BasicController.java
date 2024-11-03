@@ -18,8 +18,8 @@ package com.ww.video.base.interfaces.web;
 
 import com.ww.video.base.application.VideoService;
 import com.ww.video.base.infrastructure.ConfigSource;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -46,16 +46,7 @@ public class BasicController {
     @RequestMapping("")
     @ResponseBody
     public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        name += restTemplate.getForObject("http://ww-user-base/echo/" + name, String.class);
         return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
-    }
-
-    // http://127.0.0.1:8080/hello?name=lisi
-    @RequestMapping("/hello")
-    @ResponseBody
-    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return restTemplate.getForObject("http://ww-user-base/echo/" + "name", String.class);
-
-
-//        return "Hello " + userService.getByVideoId(1000);
     }
 }

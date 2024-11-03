@@ -16,7 +16,7 @@ public class DubboFilterProperties {
     public static String applicationName;
 
     @Value("${spring.application.name:}")
-    public void setApplicationName(String applicationName){
+    public void setApplicationName(String applicationName) {
         DubboFilterProperties.applicationName = applicationName;
     }
 
