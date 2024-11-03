@@ -1,6 +1,7 @@
 package com.ww.video.base.infrastructure.rpc;
 
 import com.ww.common.base.annotation.AccessLog;
+import com.ww.common.base.dto.RpcResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -13,10 +14,7 @@ public class RpcProxy {
 
     @AccessLog(sampleRate = 1000, strategyName = "DefaultAccessLogStrategy")
     public String sayHello(String name) {
-        return restTemplate.getForObject("http://ww-user-base/echo/" + name, String.class);
-
-//        RpcResult<String> result = (RpcResult<String>)restTemplate.getForObject("http://ww-user-base/hello", RpcResult.class);
-//
-//        return name + result.toString();
+        RpcResult<String> result = (RpcResult<String>) restTemplate.getForObject("http://ww-user-base/hello?name=" + name, RpcResult.class);
+        return name + result;
     }
 }

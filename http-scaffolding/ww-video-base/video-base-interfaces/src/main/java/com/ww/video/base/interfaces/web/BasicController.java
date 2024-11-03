@@ -46,7 +46,7 @@ public class BasicController {
     @RequestMapping("")
     @ResponseBody
     public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        name += restTemplate.getForObject("http://ww-user-base/echo/" + name, String.class);
-        return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
+        name += userService.getByVideoId(1000);
+        return name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
     }
 }

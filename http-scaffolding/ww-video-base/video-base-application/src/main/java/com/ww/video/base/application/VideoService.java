@@ -18,6 +18,6 @@ public class VideoService {
         VideoEntity videoEntity = videoDomain.getByVideoId(videoId);
         String value = rpcProxy.sayHello("doooeeee");
 
-        return value + videoEntity.toString();
+        return value + "------" + videoEntity.toString();
     }
 }

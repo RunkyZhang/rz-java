@@ -1,22 +1,20 @@
 package com.ww.user.base.infrastructure.rpc;
 
-import com.ww.common.base.Helper;
 import com.ww.common.base.annotation.AccessLog;
 import com.ww.common.base.dto.RpcResult;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import javax.annotation.Resource;
 
 @Service
 public class RpcProxy {
-//    @DubboReference
-//    private DemoService demoService;
+//    @Resource
+//    private RestTemplate restTemplate;
 //
-//    @AccessLog(sampleRate = 20, strategyName = "DefaultAccessLogStrategy")
+//    @AccessLog(sampleRate = 1000, strategyName = "DefaultAccessLogStrategy")
 //    public String sayHello(String name) {
-//        SayHelloByNameRequestDto requestDto = new SayHelloByNameRequestDto();
-//        requestDto.setName(name);
-//        RpcResult<String> result = demoService.sayHelloByName(requestDto);
-//        return Helper.getResultData(result, true);
+//        RpcResult<String> result = (RpcResult<String>) restTemplate.getForObject("http://ww-user-base/hello?name=" + name, RpcResult.class);
+//        return name + result;
 //    }
-
-
 }

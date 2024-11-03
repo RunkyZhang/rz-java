@@ -21,7 +21,6 @@ import com.ww.user.base.api.entity.UserEntity;
 import com.ww.user.base.application.UserService;
 import com.ww.user.base.infrastructure.ConfigSource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -43,18 +42,18 @@ public class BasicController {
 //    @Value("${serverAddress:11。11。11。11}")
 //    private String serverAddress;
 
-    // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("")
     @ResponseBody
     public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
     }
 
+    // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("/hello")
     @ResponseBody
     public RpcResult<String> hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        UserEntity user = userService.getByUserId(100000000);
-        return RpcResult.success(name + ",hello!---" + user.toString());
+        UserEntity userEntity = userService.getByUserId(100000000);
+        return RpcResult.success(name + ",hello!---" + userEntity.toString());
     }
 
     @RequestMapping(value = "/echo/{string}", method = RequestMethod.GET)
