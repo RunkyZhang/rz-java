@@ -1,5 +1,6 @@
 package com.ww.video.base.application;
 
+import com.ww.common.base.dto.RpcResult;
 import com.ww.video.base.api.entity.VideoEntity;
 import com.ww.video.base.domain.VideoDomain;
 import com.ww.video.base.infrastructure.rpc.RpcProxy;
@@ -16,8 +17,8 @@ public class VideoService {
 
     public String getByVideoId(long videoId) {
         VideoEntity videoEntity = videoDomain.getByVideoId(videoId);
-        String value = rpcProxy.sayHello("doooeeee");
+        RpcResult<String> rpcResult = rpcProxy.sayHello("doooeeee");
 
-        return value + "------" + videoEntity.toString();
+        return rpcResult + "------" + videoEntity.toString();
     }
 }
