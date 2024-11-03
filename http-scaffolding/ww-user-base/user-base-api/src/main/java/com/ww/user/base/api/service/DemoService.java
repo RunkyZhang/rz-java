@@ -1,17 +1,13 @@
 package com.ww.user.base.api.service;
 
-import com.ww.common.base.annotation.AccessLog;
 import com.ww.common.base.dto.RpcResult;
 import com.ww.user.base.api.dto.SayHelloByNameRequestDto;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
+@FeignClient("ww-user-base")
 public interface DemoService {
-    /**
-     * 根据名字say hello
-     *
-     * @return name + hello
-     * telnet localhost 15511
-     * invoke com.ww.user.base.api.service.DemoService.sayHelloByName({name:"111"})
-     */
-    @AccessLog(sampleRate = 1000, strategyName = "DefaultAccessLogStrategy")
-    RpcResult<String> sayHelloByName(SayHelloByNameRequestDto requestDto);
+    @PostMapping("/sayHello")
+    RpcResult<String> sayHelloByName(@RequestBody SayHelloByNameRequestDto requestDto);
 }

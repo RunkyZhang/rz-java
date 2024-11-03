@@ -36,15 +36,9 @@ public class DemoController implements DemoService {
         return RpcResult.success(name + ",hello!---" + userEntity.toString());
     }
 
-    // curl --request POST \
-    //  --url http://localhost:8080/sayHello \
-    //  --header 'Content-Type: application/json' \
-    //  --data '{
-    //  "name": "houhou"
-    //}
-    //'
+    // curl --request POST --url http://localhost:8080/sayHello --header 'Content-Type: application/json' --data '{"name": "houhou"}'
+    // http的路径和method定义在接口中
     @Override
-    @PostMapping("/sayHello")
     public RpcResult<String> sayHelloByName(@RequestBody SayHelloByNameRequestDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
 

@@ -132,6 +132,13 @@
                 <version>1.9.22.1</version>
                 <!--                <scope>runtime</scope>-->
             </dependency>
+
+            <!-- feign-httpclient：替换feign原http调用工具，为了优化连接池，通过配置替换 -->
+            <dependency>
+                <groupId>io.github.openfeign</groupId>
+                <artifactId>feign-httpclient</artifactId>
+                <version>13.5</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
