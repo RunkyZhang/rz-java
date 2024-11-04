@@ -28,6 +28,7 @@ spring:
           group: DEFAULT_GROUP
           refresh: true
 
+
 # mybatis
 mybatis:
   mapper-locations[0]: classpath*:mapper/**/*.xml
@@ -42,3 +43,19 @@ feign:
     enabled: true # 开启feign对HttpClient的支持。原http调用工具无线程池性能低
     max-connections: 200 # 最大的连接数
     max-connections-per-route: 50 # 每个路径的最大连接数
+
+# wangwang
+#  cloud:
+#    nacos:
+#      username: nacos
+#      password: crNbULLpCuhB9YeB
+#      discovery:
+#        server-addr: 47.101.54.47:8848
+#      config:
+#        server-addr: 47.101.54.47:8848
+#        file-extension: properties
+#        namespace: dev
+#        extension-configs[0]:
+#          data-id: redis.properties
+#          group: DEFAULT_GROUP
+#          refresh: true
