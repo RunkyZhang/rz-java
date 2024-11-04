@@ -1,0 +1,23 @@
+server:
+  port: 5050
+
+spring:
+  application:
+    name: rz-api-gateway
+  cloud:
+    gateway:
+      routes:
+        # 访问http://localhost:5050/yyy时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/xxx忽略
+        # 最终访问https://www.baidu.com
+        - id: path_route1
+          predicates:
+            - Path=/xxx
+          filters:
+            - StripPrefix=1
+          uri: https://www.baidu.com
+        # 访问http://localhost:5050/hello时候会把localhost:5050替换成localhost:8080。并把/hello接在后面
+        # 最终访问http://localhost:8080/hello
+        - id: path_route2
+          predicates:
+            - Path=/hello
+          uri: http://localhost:8080
