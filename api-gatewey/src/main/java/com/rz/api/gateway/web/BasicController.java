@@ -16,8 +16,9 @@
 
 package com.rz.api.gateway.web;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -25,13 +26,21 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
+@RefreshScope
 @Controller
 public class BasicController {
+    @Value("${useLocalCache:false}")
+    private boolean useLocalCache;
+    @Value("${userName:1111}")
+    private String userName;
+    @Value("${serverAddress:11。11。11。11}")
+    private String serverAddress;
 
     // http://127.0.0.1:8080/hello?name=lisi
     @RequestMapping("/houhou")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        name += "===" + serverAddress + "---" + userName + "---" + useLocalCache;
         return "Hello " + name;
     }
 }

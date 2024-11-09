@@ -4,7 +4,20 @@ server:
 spring:
   application:
     name: rz-api-gateway
+  main:
+    allow-bean-definition-overriding: true
   cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: properties
+        namespace: dev
+        extension-configs[0]:
+          data-id: redis.properties
+          group: DEFAULT_GROUP
+          refresh: true
     gateway:
       routes:
         # 访问http://localhost:5050/yyy时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/xxx忽略
