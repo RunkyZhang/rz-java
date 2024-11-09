@@ -16,8 +16,12 @@ spring:
             - StripPrefix=1
           uri: https://www.baidu.com
         # 访问http://localhost:5050/hello时候会把localhost:5050替换成localhost:8080。并把/hello接在后面
-        # 最终访问http://localhost:8080/hello
+        # 最终访问http://localhost:8080/sayHello
+        # 把Delete请求转为Post请求。注意sayHello接口需要一个body（json）
         - id: path_route2
           predicates:
-            - Path=/hello
+            - Path=/sayHello
+            - Method=DELETE
+          filters:
+            - ChangeMethod=POST
           uri: http://localhost:8080

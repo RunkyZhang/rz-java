@@ -1,13 +1,20 @@
-//package com.rz.web.demo.config;
-//
-//import org.springframework.cloud.gateway.route.RouteLocator;
-//import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//
-//@Configuration
-//public class BeanConfig {
-//
+package com.rz.api.gateway.config;
+
+import com.rz.api.gateway.filter.ChangeMethodGatewayFilterFactory;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class BeanConfig {
+
 //    @Bean
 //    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 //        //@formatter:off
@@ -31,4 +38,18 @@
 //                .build();
 //        //@formatter:on
 //    }
-//}
+
+    @Bean
+    public RouteLocator routeLocators(RouteLocatorBuilder builder) {
+        // getToPostAndAddBody路由解释：条件是路径为/sayHello并且是Get调用。动作是Get转为Post，header里面添加contentType值为json，添加body里面带name字段
+        return builder.routes()
+                .route("getToPostAndAddBody", p -> p.path("/sayHello").and().method(HttpMethod.GET)
+                        .filters(f -> f.modifyRequestBody(String.class, Map.class, MediaType.APPLICATION_JSON_VALUE, (exchange, s) -> {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("name", "Get请求通过gateway转为Post请求【同时添加body】【body里面有name字段】");
+                            return Mono.just(map);
+                        }).filter(new ChangeMethodGatewayFilterFactory().apply(new ChangeMethodGatewayFilterFactory.Config(HttpMethod.POST))))
+                        .uri("http://localhost:8080"))
+                .build();
+    }
+}
