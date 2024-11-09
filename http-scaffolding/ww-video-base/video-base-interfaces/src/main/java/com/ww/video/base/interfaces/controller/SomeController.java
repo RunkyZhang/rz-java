@@ -5,11 +5,12 @@ import com.ww.video.base.api.dto.SayHelloByNameRequestDto;
 import com.ww.video.base.api.service.SomeService;
 import com.ww.video.base.application.VideoService;
 import com.ww.video.base.infrastructure.ConfigSource;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 
@@ -31,7 +32,6 @@ public class SomeController implements SomeService {
     }
 
     @Override
-    @PostMapping("/sayHello")
     public RpcResult<String> sayHelloByName(SayHelloByNameRequestDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
 

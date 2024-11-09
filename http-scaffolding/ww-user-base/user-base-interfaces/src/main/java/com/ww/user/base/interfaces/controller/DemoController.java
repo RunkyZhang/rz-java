@@ -24,15 +24,10 @@ public class DemoController implements DemoService {
 
     @RequestMapping("")
     @ResponseBody
-    public String test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        return "Hello " + name + "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
-    }
-
-    // http://127.0.0.1:8080/hello?name=lisi
-    @RequestMapping("/hello")
-    @ResponseBody
-    public RpcResult<String> hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+    public RpcResult<String> test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        name += "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
         UserEntity userEntity = userService.getByUserId(100000000);
+
         return RpcResult.success(name + ",hello!---" + userEntity.toString());
     }
 

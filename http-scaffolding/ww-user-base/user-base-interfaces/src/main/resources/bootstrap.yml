@@ -44,6 +44,10 @@ feign:
     max-connections: 200 # 最大的连接数
     max-connections-per-route: 50 # 每个路径的最大连接数
 
+# swagger。默认关闭，在nacos中开启
+swagger:
+  enable: false
+
 # wangwang
 #  cloud:
 #    nacos:
