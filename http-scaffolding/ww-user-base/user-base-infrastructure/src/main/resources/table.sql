@@ -21,6 +21,11 @@ CREATE TABLE `vf_user`
 
 ) DEFAULT CHARACTER SET=utf8mb4 AUTO_INCREMENT=100000000 COMMENT='用户注册表';
 
+
+/*普通索引索引*/ ALTER TABLE employees ADD INDEX idx_houhou (houhou);
+/*唯一索引索引*/ ALTER TABLE employees ADD UNIQUE idx_houhou (houhou);
+
+
 /*
 CREATE TABLE `vf_user_device`
 (
