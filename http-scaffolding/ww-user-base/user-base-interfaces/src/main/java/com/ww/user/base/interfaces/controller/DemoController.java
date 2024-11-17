@@ -22,8 +22,8 @@ public class DemoController implements DemoService {
     @Value("${useLocalCache:false}")
     private boolean useLocalCache;
 
-    @RequestMapping("")
-    @ResponseBody
+    // @RequestMapping 会自动生成post，get，delete等多个接口
+    @GetMapping("getConfig")
     public RpcResult<String> test(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         name += "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
         UserEntity userEntity = userService.getByUserId(100000000);
