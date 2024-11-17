@@ -36,8 +36,8 @@ public class BasicController {
     @Value("${serverAddress:11。11。11。11}")
     private String serverAddress;
 
-    // http://127.0.0.1:5050/hello?name=lisi
-    @RequestMapping("/houhou")
+    // http://127.0.0.1:5050?name=lisi
+    @RequestMapping("")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         name += "===" + serverAddress + "---" + userName + "---" + useLocalCache;

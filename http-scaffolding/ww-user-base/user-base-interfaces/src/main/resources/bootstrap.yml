@@ -16,6 +16,18 @@ spring:
     password: 12345678
   # config center：读取nacos中命名空间为dev的ww-user-base.properties和redis.properties
   cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080
+      datasource:
+        flowLimiting:
+          nacos:
+            server-addr: localhost:8848
+            dataId: ww-user-base-flowLimiting-sentinel.json
+            groupId: DEFAULT_GROUP
+            namespace: dev
+            data_type: json
+            rule-type: flow
     nacos:
       discovery:
         server-addr: localhost:8848

@@ -60,6 +60,17 @@
             </exclusions>
         </dependency>
 
+        <!-- alibaba sentinel -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+        <!-- alibaba sentinel 持久化nacos -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+        </dependency>
+
         <!-- aop -->
         <dependency>
             <groupId>org.aspectj</groupId>

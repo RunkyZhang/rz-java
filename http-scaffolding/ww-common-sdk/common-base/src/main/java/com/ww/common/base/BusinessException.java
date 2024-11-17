@@ -42,6 +42,7 @@ public class BusinessException extends RuntimeException {
     public String getMessage() {
         return Objects.isNull(this.message) ? super.getMessage() : this.message;
     }
+
     public boolean isErrorLogLevel() {
         return errorLogLevel;
     }
@@ -56,5 +57,13 @@ public class BusinessException extends RuntimeException {
 
     public static BusinessException FAILED_INVOKE_RPC_API_WITH_RESULT(Long code, String message, String domain) {
         return new BusinessException(800012L, String.format("failed to invoke rpc api; result: code(%d); message(%s); domain(%s)", code, message, domain), null);
+    }
+
+    public static BusinessException API_FLOW_LIMITING(String source, String parameters, Throwable throwable) {
+        return new BusinessException(800013L, String.format("api(%s) rate was limited; parameters(%s)", source, parameters), throwable, true);
+    }
+
+    public static BusinessException INVOKE_FLOW_BREAKING(String source, String parameters, Throwable throwable) {
+        return new BusinessException(800014L, String.format("invoke(%s) was broken; parameters(%s)", source, parameters), throwable, true);
     }
 }
