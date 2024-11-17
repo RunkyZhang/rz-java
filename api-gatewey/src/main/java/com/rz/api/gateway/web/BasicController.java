@@ -36,7 +36,7 @@ public class BasicController {
     @Value("${serverAddress:11。11。11。11}")
     private String serverAddress;
 
-    // http://127.0.0.1:8080/hello?name=lisi
+    // http://127.0.0.1:5050/hello?name=lisi
     @RequestMapping("/houhou")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {

@@ -10,7 +10,7 @@ import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
-// http://localhost:8080/swagger-ui.html
+// http://localhost:7070/swagger-ui.html
 @Configuration
 public class SwaggerConfig {
     @Value("${swagger.enable:false}")
@@ -23,7 +23,7 @@ public class SwaggerConfig {
                 .apiInfo(new ApiInfoBuilder()
                         .title("用户服务")
                         .description("用户功能接口的文档")
-                        .version("80.80")
+                        .version("70.70")
                         .build())
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.ww.user.base.interfaces.controller"))
