@@ -33,7 +33,7 @@ public class InvokingLogProcessor {
 
         // accessLogContext
         AccessLogContext accessLogContext = new AccessLogContext();
-        accessLogContext.setUrl(String.format("%s#%s", methodSignature.getDeclaringType().getName(), methodName));
+        accessLogContext.setRequestURL(String.format("%s#%s", methodSignature.getDeclaringType().getName(), methodName));
         accessLogContext.setStartTimePoint(startTimePoint);
         accessLogContext.setStartLogMessage(String.format(
                 "start(%s) to invoke method(%s); parameters: %s",
@@ -42,7 +42,7 @@ public class InvokingLogProcessor {
                 JacksonHelper.toJson(proceedingJoinPoint.getArgs(), false)));
 
         // should log
-        AccessLogStrategy accessLogStrategy = accessLogStrategySelector.select(accessLogContext.getUrl());
+        AccessLogStrategy accessLogStrategy = accessLogStrategySelector.select(accessLogContext.getRequestURL());
         accessLogContext.setShouldLog(null == accessLogStrategy || accessLogStrategy.shouldLog());
         if (accessLogContext.isShouldLog()) {
             log.info(accessLogContext.getStartLogMessage());
