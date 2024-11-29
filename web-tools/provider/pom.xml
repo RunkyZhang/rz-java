@@ -19,6 +19,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.rz.core</groupId>
+            <artifactId>rz-core-common</artifactId>
+        </dependency>
+
+        <!-- web -->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
