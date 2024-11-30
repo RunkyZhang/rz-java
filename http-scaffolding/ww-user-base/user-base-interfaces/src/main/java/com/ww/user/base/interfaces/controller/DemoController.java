@@ -30,13 +30,15 @@ public class DemoController implements DemoService {
     private boolean useLocalCache;
 
     // @RequestMapping 会自动生成post，get，delete等多个接口
-    // @SentinelResource(value = "/getConfig", blockHandler = "getConfigLimited", blockHandlerClass = ApiFlowLimiting.class)
-    @GetMapping("getConfig")
+    @SentinelResource(value = "DemoController.getConfig", blockHandler = "getConfigLimited", blockHandlerClass = ApiFlowLimiting.class)
+    @GetMapping("/getConfig")
     public RpcResult<String> getConfig(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         name += "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
         UserEntity userEntity = userService.getByUserId(100000000);
 
-        //rpcProxy.getName("asdasdasd");
+        if(0 == System.currentTimeMillis() % 2) {
+            throw new RuntimeException("测试异常情况，几率为50%。");
+        }
 
         return RpcResult.success(name + ",hello!---" + userEntity.toString());
     }

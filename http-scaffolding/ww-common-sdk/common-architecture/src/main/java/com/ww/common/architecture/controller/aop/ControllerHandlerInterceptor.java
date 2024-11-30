@@ -27,7 +27,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class ControllerHandlerInterceptor implements HandlerInterceptor {
-    public ThreadLocal<AccessLogContext> accessLogContextThreadLocal = new ThreadLocal<>();
+    public static ThreadLocal<AccessLogContext> accessLogContextThreadLocal = new ThreadLocal<>();
 
     @Resource
     private AccessLogStrategySelector accessLogStrategySelector;
@@ -80,6 +80,9 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception e) throws Exception {
         AccessLogContext accessLogContext = accessLogContextThreadLocal.get();
+        if (null == accessLogContext) {
+            return;
+        }
 
         long duration = System.currentTimeMillis() - accessLogContext.getStartTimePoint();
         // RT monitor

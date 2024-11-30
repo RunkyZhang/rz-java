@@ -20,6 +20,7 @@ spring:
       transport:
         dashboard: localhost:8080
       datasource:
+        # 限流配置保存在nacos中，"flowLimiting"为配置文件key可以随便定义
         flowLimiting:
           nacos:
             server-addr: localhost:8848
@@ -75,3 +76,18 @@ swagger:
 #          data-id: redis.properties
 #          group: DEFAULT_GROUP
 #          refresh: true
+
+
+# sentinel的配置保存在nacos中通过datasource配置。dataId: ww-user-base-flowLimiting-sentinel.json配置文件配置了api限流
+# 限流
+#    "resource": "DemoController.getConfig", // 资源名称
+#    "limitApp": "default", // 针对来源：default就可以
+#    "grade": 1, // 阈值类型：0是线程，1是QPS
+#    "count": 3, // 阈值
+#    "clusterMode": false, // 是否集群
+#    "strategy": 0, // 流控模式：0是直接，1是关联，2是链接
+#    "controlBehavior": 0 // 流控效果：0是直接，1是warm up，2是排队
+
+
+# 熔断
+#

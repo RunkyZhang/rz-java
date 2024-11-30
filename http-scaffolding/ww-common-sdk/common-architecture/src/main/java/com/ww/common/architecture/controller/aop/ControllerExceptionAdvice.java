@@ -17,15 +17,13 @@ import javax.annotation.Resource;
 @RestControllerAdvice
 public class ControllerExceptionAdvice {
     @Resource
-    private ControllerHandlerInterceptor controllerHandlerInterceptor;
-    @Resource
     private RTMonitor rtMonitor;
 
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public RpcResult<Object> bindExceptionHandler(Exception e) {
         // get accessLogContext
-        AccessLogContext accessLogContext = controllerHandlerInterceptor.accessLogContextThreadLocal.get();
+        AccessLogContext accessLogContext = ControllerHandlerInterceptor.accessLogContextThreadLocal.get();
 
         long currentTimeMillis = System.currentTimeMillis();
         long duration = currentTimeMillis - accessLogContext.getStartTimePoint();
@@ -80,7 +78,7 @@ public class ControllerExceptionAdvice {
                     e);
         }
 
-        controllerHandlerInterceptor.accessLogContextThreadLocal.remove();
+        ControllerHandlerInterceptor.accessLogContextThreadLocal.remove();
         return RpcResult.error(accessLogContext.getLocalApplicationName(), code, e.getMessage());
     }
 }
