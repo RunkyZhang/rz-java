@@ -6,7 +6,6 @@ import com.ww.common.architecture.log.AccessLogStrategySelector;
 import com.ww.common.architecture.rt.RTMonitor;
 import com.ww.common.base.Helper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +51,7 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
         context.setParameters(this.formatParameters(request));
 
         context.setStartTimePoint(System.currentTimeMillis());
-        context.setStartLogMessage(String.format("Start(%d) - url(%s): %s localIp: %s; remoteIp(%s): %s; parameters: %s",
+        context.setStartLogMessage(String.format("Api-Start(%d) - url(%s): %s localIp: %s; remoteIp(%s): %s; parameters: %s",
                 context.getStartTimePoint(),
                 context.getHttpMethod(),
                 context.getRequestURL(),
@@ -94,7 +92,7 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
         }
 
         if (accessLogContext.isShouldLog() || isHighRT) {
-            log.info("End({}) - spend: {}; url({}-{}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; parameter: {}; result: {}",
+            log.info("Api-End({}) - spend: {}; url({}-{}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; parameter: {}; result: {}",
                     accessLogContext.getStartTimePoint(),
                     duration + " ms",
                     accessLogContext.getHttpMethod(),
@@ -105,8 +103,7 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
                     accessLogContext.getRemoteApplicationName(),
                     accessLogContext.getRemoteAddress(),
                     accessLogContext.getParameters(),
-                    // TODO: body
-                    "null == value ? '' : value.toString()");
+                    this.formatResponseBody(response));
         }
 
         accessLogContextThreadLocal.remove();
@@ -126,34 +123,41 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
                 parameters.add(parameter);
             }
         }
-        parameters.add("ww-body: " + this.formatBody(request));
-
+        parameters.add("ww-body: " + this.formatRequestBody(request));
 
         return "[" + String.join(",", parameters) + "]";
     }
 
-    private String formatBody(HttpServletRequest request) {
-        String body = String.format("length: %d; contextType: %s; error: ", request.getContentLengthLong(), request.getContentType());
-        if (ServletFileUpload.isMultipartContent(request)) {
-            return body;
-        }
+    private String formatRequestBody(HttpServletRequest request) {
+        String body = String.format("length: %d; charset: %s; contextType: %s; error: ", request.getContentLengthLong(), request.getCharacterEncoding(), request.getContentType());
+        String charset = StringUtils.isBlank(request.getCharacterEncoding()) ? "" : request.getCharacterEncoding().toUpperCase();
         String contentType = StringUtils.isBlank(request.getContentType()) ? "" : request.getContentType().toLowerCase();
-        if (!contentType.contains("json") && !contentType.contains("xml") && !contentType.contains("text")) {
+        // 检查body是否可以转utf-8
+        if (!contentType.contains("json") && !charset.contains("ISO-8859-1") && !charset.contains("UTF-8")) {
+            return body;
+        }
+        if (!(request instanceof CacheHttpServletRequestWrapper)) {
             return body;
         }
 
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        try {
-            BufferedReader reader = request.getReader();
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-        } catch (Exception e) {
-            body += e.getMessage();
+        CacheHttpServletRequestWrapper cacheHttpServletRequestWrapper = (CacheHttpServletRequestWrapper) request;
+        return cacheHttpServletRequestWrapper.getBodyWithUTF8();
+    }
+
+    private String formatResponseBody(HttpServletResponse response) {
+        String body = String.format("charset: %s; contextType: %s; error: ", response.getCharacterEncoding(), response.getContentType());
+        String contentType = StringUtils.isBlank(response.getContentType()) ? "" : response.getContentType().toLowerCase();
+        String charset = StringUtils.isBlank(response.getCharacterEncoding()) ? "" : response.getCharacterEncoding().toUpperCase();
+        // 检查body是否可以转utf-8
+        if (!contentType.contains("json") && !charset.contains("ISO-8859-1") && !charset.contains("UTF-8")) {
             return body;
         }
 
-        return stringBuilder.toString();
+        if (!(response instanceof CacheHttpServletResponseWrapper)) {
+            return body;
+        }
+
+        CacheHttpServletResponseWrapper cacheHttpServletResponseWrapper = (CacheHttpServletResponseWrapper) response;
+        return cacheHttpServletResponseWrapper.getBodyWithUTF8();
     }
 }

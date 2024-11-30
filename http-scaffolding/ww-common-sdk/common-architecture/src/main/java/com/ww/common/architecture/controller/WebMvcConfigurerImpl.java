@@ -13,7 +13,7 @@ public class WebMvcConfigurerImpl implements WebMvcConfigurer {
     @Resource
     private ControllerHandlerInterceptor interceptor;
     @Resource
-    private CacheServletRequestResponseWrapperFilter filter;
+    private RequestResponseWrapperFilter filter;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -24,8 +24,8 @@ public class WebMvcConfigurerImpl implements WebMvcConfigurer {
      * 配置过滤器
      */
     @Bean
-    public FilterRegistrationBean<CacheServletRequestResponseWrapperFilter> addRequestBodyWrapperFilter() {
-        FilterRegistrationBean<CacheServletRequestResponseWrapperFilter> bean = new FilterRegistrationBean<>();
+    public FilterRegistrationBean<RequestResponseWrapperFilter> addRequestBodyWrapperFilter() {
+        FilterRegistrationBean<RequestResponseWrapperFilter> bean = new FilterRegistrationBean<>();
         bean.setFilter(filter);
         bean.addUrlPatterns("/*"); // 拦截所有的资源
         //bean.addUrlPatterns(WebConstant.API + "/*"); // 拦截 API所有的资源

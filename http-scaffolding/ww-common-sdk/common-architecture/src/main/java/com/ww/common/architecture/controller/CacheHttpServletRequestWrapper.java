@@ -19,10 +19,10 @@ public class CacheHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     public CacheHttpServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
-        /**
+        /*
          * 如果请求是【多部分】请求，就直接返回，不进行后续的处理。
          * 【多部分】请求包含了文件数据和其他表单字段数据
-         * 因为如果body是文件内容，那么就无需缓存。这样不需要占用本地内存，且日志侧也不会打印文件body
+         * 因为如果body是文件内容，那么就无需缓存。这样不需要占用本地内存，且日志侧也做相应判断不会打印文件body
          */
         if (ServletFileUpload.isMultipartContent(request)) {
             return;
@@ -44,7 +44,7 @@ public class CacheHttpServletRequestWrapper extends HttpServletRequestWrapper {
      *
      * @return
      */
-    public String getBody() {
+    public String getBodyWithUTF8() {
         return new String(this.body, StandardCharsets.UTF_8);
     }
 

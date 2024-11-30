@@ -52,7 +52,7 @@ public class ControllerExceptionAdvice {
         }
 
         if (errorLogLevel) {
-            log.error("End-Failed({}) - spend: {}; url({}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; CODE:{}; parameters: {}; ERROR:",
+            log.error("Api-Failed({}) - spend: {}; url({}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; CODE:{}; parameters: {}; ERROR:",
                     accessLogContext.getStartTimePoint(),
                     duration + " ms",
                     accessLogContext.getHttpMethod(),
@@ -65,7 +65,7 @@ public class ControllerExceptionAdvice {
                     accessLogContext.getParameters(),
                     e);
         } else {
-            log.warn("End-Failed({}) - spend: {}; url({}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; CODE:{}; parameters: {}; ERROR:",
+            log.warn("Api-Failed({}) - spend: {}; url({}): {}; bucket: {}; localIp: {}; remoteIp({}): {}; CODE:{}; parameters: {}; ERROR:",
                     accessLogContext.getStartTimePoint(),
                     duration + " ms",
                     accessLogContext.getHttpMethod(),
