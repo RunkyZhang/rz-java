@@ -1,4 +1,4 @@
-package com.ww.common.architecture.controller;
+package com.ww.common.architecture.controller.body;
 
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
@@ -13,11 +13,11 @@ import java.nio.charset.StandardCharsets;
  * request的body只能被读取一次。因此在日志中被读取之后，在mvc框架中再次被读取就会抛异常
  * 所以把ServletRequest从新包装。第一次读出body之后缓存起来，下次直接使用缓存中的数据
  * */
-public class CacheHttpServletRequestWrapper extends HttpServletRequestWrapper {
+public class CachingHttpServletRequestWrapper extends HttpServletRequestWrapper {
     private static final int BUFFER_SIZE = 1024 * 8;
     private byte[] body;
 
-    public CacheHttpServletRequestWrapper(HttpServletRequest request) throws IOException {
+    public CachingHttpServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
         /*
          * 如果请求是【多部分】请求，就直接返回，不进行后续的处理。

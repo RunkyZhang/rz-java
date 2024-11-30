@@ -1,4 +1,4 @@
-package com.ww.common.architecture.controller;
+package com.ww.common.architecture.controller.body;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -8,14 +8,14 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 /*
- *
+ * 通过HttpServletResponse包装类把response的body复制出来
  * */
-public class CacheHttpServletResponseWrapper extends HttpServletResponseWrapper {
+public class CopyingHttpServletResponseWrapper extends HttpServletResponseWrapper {
     private ServletOutputStream servletOutputStream;
     private PrintWriter printWriter;
     private ServletOutputStreamCopier servletOutputStreamCopier;
 
-    public CacheHttpServletResponseWrapper(HttpServletResponse response) throws IOException {
+    public CopyingHttpServletResponseWrapper(HttpServletResponse response) throws IOException {
         super(response);
     }
 

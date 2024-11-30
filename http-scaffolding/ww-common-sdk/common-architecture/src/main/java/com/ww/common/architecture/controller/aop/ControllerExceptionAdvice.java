@@ -1,4 +1,4 @@
-package com.ww.common.architecture.controller;
+package com.ww.common.architecture.controller.aop;
 
 import com.ww.common.architecture.log.AccessLogContext;
 import com.ww.common.architecture.rt.RTMonitor;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.annotation.Resource;
 
+// http接口的aop。处理http接口调用期间抛出异常的日志
 @Slf4j
 @RestControllerAdvice
 public class ControllerExceptionAdvice {

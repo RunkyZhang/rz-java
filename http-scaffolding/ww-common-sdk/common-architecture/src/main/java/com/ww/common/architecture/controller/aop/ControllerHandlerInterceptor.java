@@ -1,5 +1,7 @@
-package com.ww.common.architecture.controller;
+package com.ww.common.architecture.controller.aop;
 
+import com.ww.common.architecture.controller.body.CachingHttpServletRequestWrapper;
+import com.ww.common.architecture.controller.body.CopyingHttpServletResponseWrapper;
 import com.ww.common.architecture.log.AccessLogContext;
 import com.ww.common.architecture.log.AccessLogStrategy;
 import com.ww.common.architecture.log.AccessLogStrategySelector;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+// http接口的aop。处理http接口调用开始和结束日志。不包括异常情况
 @Slf4j
 @Service
 public class ControllerHandlerInterceptor implements HandlerInterceptor {
@@ -136,12 +139,11 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
         if (!contentType.contains("json") && !charset.contains("ISO-8859-1") && !charset.contains("UTF-8")) {
             return body;
         }
-        if (!(request instanceof CacheHttpServletRequestWrapper)) {
+        if (!(request instanceof CachingHttpServletRequestWrapper)) {
             return body;
         }
 
-        CacheHttpServletRequestWrapper cacheHttpServletRequestWrapper = (CacheHttpServletRequestWrapper) request;
-        return cacheHttpServletRequestWrapper.getBodyWithUTF8();
+        return ((CachingHttpServletRequestWrapper) request).getBodyWithUTF8();
     }
 
     private String formatResponseBody(HttpServletResponse response) {
@@ -153,11 +155,10 @@ public class ControllerHandlerInterceptor implements HandlerInterceptor {
             return body;
         }
 
-        if (!(response instanceof CacheHttpServletResponseWrapper)) {
+        if (!(response instanceof CopyingHttpServletResponseWrapper)) {
             return body;
         }
 
-        CacheHttpServletResponseWrapper cacheHttpServletResponseWrapper = (CacheHttpServletResponseWrapper) response;
-        return cacheHttpServletResponseWrapper.getBodyWithUTF8();
+        return ((CopyingHttpServletResponseWrapper) response).getBodyWithUTF8();
     }
 }

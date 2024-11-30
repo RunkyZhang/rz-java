@@ -1,4 +1,4 @@
-package com.ww.common.architecture.controller;
+package com.ww.common.architecture.controller.aop;
 
 import lombok.Data;
 

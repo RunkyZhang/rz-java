@@ -36,7 +36,7 @@ public class InvokingLogProcessor {
         accessLogContext.setRequestURL(String.format("%s#%s", methodSignature.getDeclaringType().getName(), methodName));
         accessLogContext.setStartTimePoint(startTimePoint);
         accessLogContext.setStartLogMessage(String.format(
-                "rpc-start(%s) to invoke method(%s); parameters: %s",
+                "rpc-begin(%s) to invoke method(%s); parameters: %s",
                 key,
                 methodName,
                 JacksonHelper.toJson(proceedingJoinPoint.getArgs(), false)));
@@ -53,7 +53,7 @@ public class InvokingLogProcessor {
 
             long rt = System.currentTimeMillis() - startTimePoint;
             if (accessLogContext.isShouldLog()) {
-                log.info("rpc-success({})-{} to invoke method({}); result({})",
+                log.info("rpc-finish({})-{} to invoke method({}); result({})",
                         key,
                         rt,
                         methodName,
