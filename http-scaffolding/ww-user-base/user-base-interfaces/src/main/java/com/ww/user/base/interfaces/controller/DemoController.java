@@ -55,6 +55,13 @@ public class DemoController implements DemoService {
         return RpcResult.success(name + "---hello!---" + userEntities);
     }
 
+    @GetMapping("/testInvokeFlowBreaking")
+    public RpcResult<String> testInvokeFlowBreaking() {
+        String name = rpcProxy.getName(System.currentTimeMillis() + "");
+
+        return RpcResult.success(name);
+    }
+
     // curl --request POST --url http://localhost:7070/sayHello --header 'Content-Type: application/json' --data '{"name": "houhou"}'
     // http的路径和method定义在接口中
     @Override

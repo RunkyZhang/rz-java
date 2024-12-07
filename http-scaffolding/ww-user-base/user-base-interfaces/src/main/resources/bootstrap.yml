@@ -29,6 +29,15 @@ spring:
             namespace: dev
             data_type: json
             rule-type: flow
+        # 熔断配置保存在nacos中，"flowBreaking"为配置文件key可以随便定义
+        flowBreaking:
+          nacos:
+            server-addr: localhost:8848
+            dataId: ww-user-base-flowBreaking-sentinel.json
+            groupId: DEFAULT_GROUP
+            namespace: dev
+            data_type: json
+            rule-type: degrade
     nacos:
       discovery:
         server-addr: localhost:8848
@@ -80,7 +89,7 @@ swagger:
 
 # sentinel的配置保存在nacos中通过datasource配置。dataId: ww-user-base-flowLimiting-sentinel.json配置文件配置了api限流
 # 限流
-#    "resource": "DemoController.getConfig", // 资源名称
+#    "resource": "DemoController.getConfig", // 资源名称，即规则id
 #    "limitApp": "default", // 针对来源：default就可以
 #    "grade": 1, // 阈值类型：0是线程，1是QPS
 #    "count": 3, // 阈值
@@ -88,6 +97,15 @@ swagger:
 #    "strategy": 0, // 流控模式：0是直接，1是关联，2是链接
 #    "controlBehavior": 0 // 流控效果：0是直接，1是warm up，2是排队
 
-
-# 熔断
-#
+# sentinel的配置保存在nacos中通过datasource配置。dataId: ww-user-base-flowBreaking-sentinel.json配置文件配置了rpc熔断
+# 熔断：
+#    "resource": "RpcProxy.getName",  // 资源名称，即规则id
+#    "grade": 0,  // 熔断策略：0慢调用比例，1异常比例，2异常数策略
+#    "count": 90,  // 慢调用比例策略：最大RT（慢调用临界RT值）；异常比例策略：比例阈值；异常数策略：异常数
+#    "timeWindow": 3,  // 熔断时长（单位为s）
+#    "statIntervalMs": 3000,  // 统计时长（单位为ms）：
+#    "minRequestAmount": 2,  // 最小请求数：在统计时长内熔断触发的最小请求数，请求数小于该值时即使异常比率超出阈值也不会熔断
+#    "slowRatioThreshold": 0.2  // 比例阈值：只有在慢调用比例策略生效，0～1取值。0.1表示慢调用比例为10%
+# 慢调用触发条件：当在统计时长内【statIntervalMs】 && 请求数量达到最小请求数【minRequestAmount】 && 超过慢调用RT【count】的比例达到【slowRatioThreshold】
+# 慢调用触发条件：当在统计时长内【statIntervalMs】 && 请求数量达到最小请求数【minRequestAmount】 && 异常比例达到【count】
+# 慢调用触发条件：当在统计时长内【statIntervalMs】 && 请求数量达到最小请求数【minRequestAmount】 && 异常数达到【count】
