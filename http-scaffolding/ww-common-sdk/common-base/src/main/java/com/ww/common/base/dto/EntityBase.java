@@ -1,8 +1,11 @@
 package com.ww.common.base.dto;
 
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Date;
 
+@Data
 public class EntityBase implements Serializable {
     /**
      * Column: create_time Remark: 添加时间

@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 public class DemoController implements DemoService {
@@ -33,14 +37,22 @@ public class DemoController implements DemoService {
     @SentinelResource(value = "DemoController.getConfig", blockHandler = "getConfigLimited", blockHandlerClass = ApiFlowLimiting.class)
     @GetMapping("/getConfig")
     public RpcResult<String> getConfig(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        name += "===" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
-        UserEntity userEntity = userService.getByUserId(100000000);
+        name += "：" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
+        List<Long> userIds = new ArrayList<>();
+        userIds.add(100000000L);
 
-        if(0 == System.currentTimeMillis() % 2) {
+        List<UserEntity> userEntities = new ArrayList<>();
+        UserEntity userEntity = userService.getByUserId(userIds.get(0));
+        userEntities.add(userEntity);
+        userEntities.addAll(userService.getByPhoneNo(userEntity.getPhoneNo()));
+        Map<Long, UserEntity> userEntitiesMap = userService.getByUserIds(new HashSet<>(userIds));
+        userEntities.addAll(userEntitiesMap.values());
+
+        if (0 == System.currentTimeMillis() % 2) {
             throw new RuntimeException("测试异常情况，几率为50%。");
         }
 
-        return RpcResult.success(name + ",hello!---" + userEntity.toString());
+        return RpcResult.success(name + "---hello!---" + userEntities);
     }
 
     // curl --request POST --url http://localhost:7070/sayHello --header 'Content-Type: application/json' --data '{"name": "houhou"}'

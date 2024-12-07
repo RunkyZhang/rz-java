@@ -8,6 +8,9 @@ import org.redisson.api.RBucket;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -22,11 +25,11 @@ public class UserDomain {
     @LocalCacheable(
             expireTime = 30,
             keyExpression = "T(com.ww.user.base.domain.UserDomain).cacheKey")
-    public UserEntity getByUserId(int userId) {
+    public UserEntity getByUserId(long userId) {
         RBucket<UserEntity> rBucket = redisMapper.getDefaultRedis().getBucket("ub.ue:" + userId);
         UserEntity userEntity = rBucket.get();
         if (null == userEntity) {
-            userEntity = userMapper.getByUserId(userId);
+            userEntity = userMapper.selectById(userId);
             if (null == userEntity) {
                 return null;
             }
@@ -36,5 +39,13 @@ public class UserDomain {
         }
 
         return userEntity;
+    }
+
+    public List<UserEntity> getByPhoneNo(String phoneNo) {
+        return userMapper.selectByPhoneNo(phoneNo);
+    }
+
+    public Map<Long, UserEntity> getByUserIds(Set<Long> userIds) {
+        return userMapper.selectByIds(userIds);
     }
 }

@@ -17,7 +17,15 @@
         <result column="operator" jdbcType="VARCHAR" property="operator"/>
     </resultMap>
 
-    <select id="getByUserId" resultMap="BaseResultMap">
-        select * from vf_user where id = #{userId}
+    <sql id="Base_Column_List">
+        id, phone_no, e_mail, status, source, mode,
+        create_at, modify_at, version, deleted, operator
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vf_user
+        where id = #{id,jdbcType=BIGINT}
     </select>
 </mapper>
