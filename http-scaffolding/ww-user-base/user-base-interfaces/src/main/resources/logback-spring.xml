@@ -1,221 +1,205 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 日志级别从低到高分为TRACE < DEBUG < INFO < WARN < ERROR < FATAL，如果设置为WARN，则低于WARN的信息都不会输出 -->
-<!-- scan:当此属性设置为true时，配置文件如果发生改变，将会被重新加载，默认值为true -->
-<!-- scanPeriod:设置监测配置文件是否有修改的时间间隔，如果没有给出时间单位，默认单位是毫秒。当scan为true时，此属性生效。默认的时间间隔为1分钟。 -->
-<!-- debug:当此属性设置为true时，将打印出logback内部日志信息，实时查看logback运行状态。默认值为false。 -->
+<!--
+    日志级别从低到高分为TRACE < DEBUG < INFO < WARN < ERROR < FATAL，如果设置为WARN，则低于WARN的信息都不会输出
+    scan:当此属性设置为true时，配置文件如果发生改变，将会被重新加载，默认值为true
+    scanPeriod:设置监测配置文件是否有修改的时间间隔，如果没有给出时间单位，默认单位是毫秒。当scan为true时，此属性生效。默认的时间间隔为1分钟。
+    debug:当此属性设置为true时，将打印出logback内部日志信息，实时查看logback运行状态。默认值为false。
+-->
 <configuration scan="true" scanPeriod="10 seconds">
-
     <contextName>logback</contextName>
     <!-- name的值是变量的名称，value的值时变量定义的值。通过定义的值会被插入到logger上下文中。定义变量后，可以使“${}”来使用变量-->
-    <property name="log.path" value="/Users/runkyzhang/Documents/codes/logs" />
-
-    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg %n"/>
-
-
-    <!--输出到控制台-->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!--此日志appender是为开发使用，只配置最底级别，控制台输出的日志级别是大于或等于此级别的日志信息-->
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>debug</level>
-        </filter>
-        <encoder>
-            <Pattern>${CONSOLE_LOG_PATTERN}</Pattern>
-            <!-- 设置字符集 -->
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
-
-    <!--输出到文件-->
-    <!-- 时间滚动输出 level为 DEBUG 日志 -->
-    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 正在记录的日志文件的路径及文件名 -->
-        <!--先将今天的日志保存在这个文件中-->
-        <file>${log.path}/log_debug.log</file>
-        <!--日志文件输出格式 %-d{yyyy-MM-dd HH:mm:ss} [ %t:%r ] - [ %p ] %m%n
+    <!--
+        日志文件输出格式 %-d{yyyy-MM-dd HH:mm:ss} [ %t:%r ] - [ %p ] %m%n
         %d{HH: mm:ss.SSS}——日志输出时间
+        ${PID:- }——线程名称
         %thread——输出日志的进程名字，这在Web应用以及异步任务处理中很有用
         %-5level——日志级别，并且使用5个字符靠左对齐
         %logger{36}——日志输出者的名字
         %msg——日志消息
         %n——平台的换行符
-        -->
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset> <!-- 设置字符集 -->
-        </encoder>
-        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+    -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS}|${PID:- }|[%thread]|%-5level|%logger{50}:%msg %n"/>
 
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <!--如果第二天输出日志,会将当天的日志记录在<file>${log.path}/log_debug.log</file>,然后将昨天的日志归档到下面的文件中-->
-            <!--以分钟切分 %d{yyyy-MM-dd_HH-mm}-->
-            <fileNamePattern>${log.path}/debug/log-debug-%d{yyyy-MM-dd_HH-mm}.%i.log</fileNamePattern>
-            <!-- each file should be at most 100MB, keep 60 days worth of history, but at most 20GB -->
-            <!--单个日志文件最大100M，到了这个值，就会再创建一个日志文件，日志文件的名字最后+1-->
-            <maxFileSize>100MB</maxFileSize>
-            <!--日志文件保留天数-->
-            <maxHistory>30</maxHistory>
-            <!--所有的日志文件最大20G，超过就会删除旧的日志-->
-            <totalSizeCap>20GB</totalSizeCap>
-        </rollingPolicy>
+    <!-- 输出到控制台：ConsoleAppender为控制台输出实现类 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 使用ThresholdFilter实现类，输出的日志级别是>=此级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>debug</level>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <!-- 设置字符集 -->
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 滚动输出到文件： RollingFileAppender为滚动输出到文件的实现类 -->
+    <!-- 时间滚动输出：level为DEBUG日志 -->
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!--
-        此日志文件只记录debug级别的
-        onMatch和onMismatch都有三个属性值，分别为Accept、DENY和NEUTRAL
-        onMatch="ACCEPT" 表示匹配该级别及以上
-        onMatch="DENY" 表示不匹配该级别及以上
-        onMatch="NEUTRAL" 表示该级别及以上的，由下一个filter处理，如果当前是最后一个，则表示匹配该级别及以上
-        onMismatch="ACCEPT" 表示匹配该级别以下
-        onMismatch="NEUTRAL" 表示该级别及以下的，由下一个filter处理，如果当前是最后一个，则不匹配该级别以下的
-        onMismatch="DENY" 表示不匹配该级别以下的
+            使用LevelFilter实现类：配合onMatch=ACCEPT & onMismatch=DENY，输出的日志级别是==debug
+            ===
+            onMatch和onMismatch都有三个属性值，分别为ACCEPT、DENY和NEUTRAL
+            onMatch="ACCEPT" 表示匹配该级别及以上
+            onMatch="DENY" 表示不匹配该级别及以上
+            onMatch="NEUTRAL" 表示该级别及以上的，由下一个filter处理，如果当前是最后一个，则表示匹配该级别及以上
+            onMismatch="ACCEPT" 表示匹配该级别以下
+            onMismatch="DENY" 表示不匹配该级别以下的
+            onMismatch="NEUTRAL" 表示该级别及以下的，由下一个filter处理，如果当前是最后一个，则不匹配该级别以下的
         -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>debug</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
-    </appender>
 
-    <!-- 时间滚动输出 level为 INFO 日志 -->
-    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 正在记录的日志文件的路径及文件名 -->
-        <file>${log.path}/log_info.log</file>
-        <!--日志文件输出格式-->
+        <!-- 当天日志保存在这个路径下的文件中 -->
+        <file>${LOG_HOME:-./logs}/user-base-debug.log</file>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>${LOG_PATTERN}</pattern>
+            <!-- 设置字符集 -->
             <charset>UTF-8</charset>
         </encoder>
+
         <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <!--如果第二天输出日志,会将当天的日志记录在<file>${log.path}/log_debug.log</file>,然后将昨天的日志归档到下面的文件中-->
-            <!--以分钟切分 %d{yyyy-MM-dd_HH-mm}-->
-            <fileNamePattern>${log.path}/info/log-info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- each file should be at most 100MB, keep 60 days worth of history, but at most 20GB -->
-            <!--单个日志文件最大100M，到了这个值，就会再创建一个日志文件，日志文件的名字最后+1-->
+            <!-- 前一天的日志会被按照日期归档到logs/debug目录下。%i是超出单个日志最大size的自增标识 -->
+            <!-- 以日期切分：%d{yyyy-MM-dd} -->
+            <fileNamePattern>${LOG_HOME:-./logs}/debug/user-base-debug-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 单个日志文件最大100M，到了这个值，就会再创建一个日志文件，日志文件的名字最后+1（%i处） -->
             <maxFileSize>100MB</maxFileSize>
-            <!--日志文件保留天数-->
+            <!-- 日志文件保留天数 -->
             <maxHistory>30</maxHistory>
-            <!--所有的日志文件最大20G，超过就会删除旧的日志-->
+            <!-- 所有的日志文件最大20G，超过就会删除旧的日志 -->
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
-        <!--SizeAndTimeBasedRollingPolicy配置更灵活,所以改用SizeAndTimeBasedRollingPolicy-->
-        <!--<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        &lt;!&ndash; 每天日志归档路径以及格式 &ndash;&gt;
-        <fileNamePattern>${log.path}/info/log-info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-        <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-        <maxFileSize>100MB</maxFileSize>
-        </timeBasedFileNamingAndTriggeringPolicy>
-        &lt;!&ndash;日志文件保留天数&ndash;&gt;
-        <maxHistory>15</maxHistory>
-        </rollingPolicy>-->
-        <!-- 此日志文件只记录info级别的 -->
+    </appender>
+
+    <!-- 时间滚动输出：level为INFO日志 -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 使用LevelFilter实现类：配合onMatch=ACCEPT & onMismatch=DENY，输出的日志级别是==info -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>info</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
-    </appender>
 
-    <!-- 时间滚动输出 level为 WARN 日志 -->
-    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 正在记录的日志文件的路径及文件名 -->
-        <file>${log.path}/log_warn.log</file>
-        <!--日志文件输出格式-->
+        <file>${LOG_HOME:-./logs}/user-base-info.log</file>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset> <!-- 此处设置字符集 -->
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
-        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <!--如果第二天输出日志,会将当天的日志记录在<file>${log.path}/log_debug.log</file>,然后将昨天的日志归档到下面的文件中-->
-            <!--以分钟切分 %d{yyyy-MM-dd_HH-mm}-->
-            <fileNamePattern>${log.path}/warn/log-warn-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- each file should be at most 100MB, keep 60 days worth of history, but at most 20GB -->
-            <!--单个日志文件最大100M，到了这个值，就会再创建一个日志文件，日志文件的名字最后+1-->
+            <fileNamePattern>${LOG_HOME:-./logs}/info/user-base-info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
-            <!--日志文件保留天数-->
             <maxHistory>30</maxHistory>
-            <!--所有的日志文件最大20G，超过就会删除旧的日志-->
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
-        <!-- 此日志文件只记录warn级别的 -->
+    </appender>
+
+    <!-- 时间滚动输出：level为WARN日志 -->
+    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 使用LevelFilter实现类：配合onMatch=ACCEPT & onMismatch=DENY，输出的日志级别是==warn -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>warn</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
-    </appender>
 
-
-    <!-- 时间滚动输出 level为 ERROR 日志 -->
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 正在记录的日志文件的路径及文件名 -->
-        <file>${log.path}/log_error.log</file>
-        <!--日志文件输出格式-->
+        <file>${LOG_HOME:-./logs}/user-base-warn.log</file>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
-            <charset>UTF-8</charset> <!-- 此处设置字符集 -->
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
-        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <!--如果第二天输出日志,会将当天的日志记录在<file>${log.path}/log_debug.log</file>,然后将昨天的日志归档到下面的文件中-->
-            <!--以分钟切分 %d{yyyy-MM-dd_HH-mm}-->
-            <fileNamePattern>${log.path}/error/log-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- each file should be at most 100MB, keep 60 days worth of history, but at most 20GB -->
-            <!--单个日志文件最大100M，到了这个值，就会再创建一个日志文件，日志文件的名字最后+1-->
+            <fileNamePattern>${LOG_HOME:-./logs}/warn/user-base-warn-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
-            <!--日志文件保留天数-->
             <maxHistory>30</maxHistory>
-            <!--所有的日志文件最大20G，超过就会删除旧的日志-->
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
-        <!-- 此日志文件只记录ERROR级别的 -->
+    </appender>
+
+    <!-- 时间滚动输出：level为ERROR日志 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 使用LevelFilter实现类：配合onMatch=ACCEPT & onMismatch=DENY，输出的日志级别是==error -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>ERROR</level>
+            <level>error</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
+
+        <file>${LOG_HOME:-./logs}/user-base-error.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME:-./logs}/error/user-base-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
     </appender>
 
-    <!--root配置必须在appender下边-->
-    <!--root节点是对所有appender的管理,添加哪个appender就会打印哪个appender的日志-->
-    <!--root节点的level是总的日志级别控制,如果appender的日志级别设定比root的高,会按照appender的日志级别打印日志,-->
-    <!--如果appender的日志级别比root的低,会按照root设定的日志级别进行打印日志-->
-    <!--也就是说root设定的日志级别是最低限制,如果root设定级别为最高ERROR,那么所有appender只能打印最高级别的日志-->
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="DEBUG_FILE" />
-        <appender-ref ref="INFO_FILE" />
-        <appender-ref ref="WARN_FILE" />
-        <appender-ref ref="ERROR_FILE" />
-    </root>
-
-
-    <!--name:用来指定受此loger约束的某一个包或者具体的某一个类。-->
-    <!--addtivity:是否向上级loger传递打印信息。默认是true。-->
-    <logger name="com.pikaiqu.logbackdemo.LogbackdemoApplicationTests" level="debug" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="INFO_FILE" />
+    <!--
+        name: 用来指定受此约束的类全路径
+        addtivity: 是否向上级logger传递打印信息。默认是true。设置为false可以避免重复打印（上级logger也打印一次）
+        举例：由于整体（root中设置的）打印日志的级别为info。如果想打印某些类的debug日志，那么可以用以下配置
+        只输出level=debug的日志
+        STDOUT输出感觉有点问题？？？
+    -->
+    <logger name="com.ww.user.base.domain.UserDomain" level="debug" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="DEBUG_FILE"/>
     </logger>
 
-    <!--配置多环境日志输出 可以在application.properties中配置选择哪个profiles : spring.profiles.active=dev-->
-    <!--生产环境:输出到文件-->
-    <!--<springProfile name="pro">
-    <root level="info">
-    <appender-ref ref="DEBUG_FILE" />
-    <appender-ref ref="INFO_FILE" />
-    <appender-ref ref="ERROR_FILE" />
-    <appender-ref ref="WARN_FILE" />
-    </root>
-    </springProfile>-->
-    <!--开发环境:打印控制台-->
-    <!--<springProfile name="dev">
-    <root level="debug">
-    <appender-ref ref="STDOUT" />
-    </root>
-    </springProfile>-->
+    <!--
+        举例：由于整体（root中设置的）打印日志的级别为info。如果想屏蔽某些类的info日志，那么可以用一下配置
+        只输出level=debug或error的日志
+        STDOUT输出感觉有点问题？？？
+    -->
+    <logger name="com.ww.user.base.application.UserService" level="warn|error" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="WARN_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
 
+    <!--
+        root配置必须写在在appender下
+        root节点是对所有appender的管理,添加哪个appender就会打印哪个appender的日志
+        root节点的level是总的日志级别控制,如果appender的日志级别设定比root的高,会按照appender的日志级别打印日志
+        如果appender的日志级别比root的低,会按照root设定的日志级别进行打印日志
+        也就是说root设定的日志级别是最低限制,如果root设定级别为最高ERROR,那么所有appender只能打印最高级别的日志
+    -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="DEBUG_FILE"/>
+        <appender-ref ref="INFO_FILE"/>
+        <appender-ref ref="WARN_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+    <!--
+        配置多环境日志输出：可以在application.properties中配置选择哪个profiles: spring.profiles.active=dev
+        生产环境（spring.profiles.active=prd）: 输出到文件
+        开发环境（spring.profiles.active=dev）: 输出到控制台
+    -->
+    <!--
+        <springProfile name="prd">
+            <root level="info">
+                <appender-ref ref="DEBUG_FILE" />
+                <appender-ref ref="INFO_FILE" />
+                <appender-ref ref="ERROR_FILE" />
+                <appender-ref ref="WARN_FILE" />
+            </root>
+        </springProfile>
+        <springProfile name="dev">
+            <root level="debug">
+                <appender-ref ref="STDOUT" />
+            </root>
+        </springProfile>
+    -->
 </configuration>

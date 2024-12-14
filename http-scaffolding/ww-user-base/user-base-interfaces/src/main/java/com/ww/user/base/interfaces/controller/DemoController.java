@@ -8,6 +8,7 @@ import com.ww.user.base.api.service.DemoService;
 import com.ww.user.base.application.UserService;
 import com.ww.user.base.infrastructure.ConfigSource;
 import com.ww.user.base.infrastructure.rpc.RpcProxy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 public class DemoController implements DemoService {
     @Resource
@@ -67,6 +69,11 @@ public class DemoController implements DemoService {
     @Override
     public RpcResult<String> sayHelloByName(@RequestBody SayHelloByNameRequestDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
+
+        log.debug("log-test-debug--DemoController--hohouhou");
+        log.info("log-test-info--DemoController--hohouhou");
+        log.warn("log-test-warn--DemoController--hohouhou");
+        log.error("log-test-error--DemoController--hohouhou");
 
         UserEntity userEntity = userService.getByUserId(100000000);
         return RpcResult.success(requestDto.getName() + "---" + userEntity.toString());
