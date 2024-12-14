@@ -8,6 +8,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @SpringBootApplication
 @EnableDiscoveryClient
 public class ApiGatewayApplication {
+    // demo：curl http://localhost:5050/sayHello
+    // 路由策略：（getToPostAndAddBody
+    // 调用路径：api gateway -》user-base
     public static void main(String[] args) {
         SpringApplication.run(ApiGatewayApplication.class, args);
     }

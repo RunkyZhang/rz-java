@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class BeanConfig {
+public class RouteLocatorConfig {
 
 //    @Bean
 //    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
@@ -41,7 +41,10 @@ public class BeanConfig {
 
     @Bean
     public RouteLocator routeLocators(RouteLocatorBuilder builder) {
-        // getToPostAndAddBody路由解释：条件是路径为/sayHello并且是Get调用。动作是Get转为Post，header里面添加contentType值为json，添加body里面带name字段
+        // getToPostAndAddBody路由解释：
+        // demo：curl http://localhost:5050/sayHello
+        // 条件：路径为/sayHello并且是Get调用
+        // 动作：Get转为Post；header里面添加contentType值为json；添加带name字段的json格式的body
         // 使用nacos注册中心负载均衡调用：.uri("lb://ww-user-base")) = .uri("http://localhost:7070"))
         return builder.routes()
                 .route("getToPostAndAddBody", p -> p.path("/sayHello").and().method(HttpMethod.GET)
