@@ -9,7 +9,9 @@ import java.util.Set;
 
 @Mapper
 public interface UserMapper {
-    UserEntity selectById(long id);
+    UserEntity selectVFById(long id);
+
+    List<UserEntity> selectById2(long id);
 
     // 如果不使用xml中的resultMap，可以使用as的方式设置表字段和类字段名字一样（例如：phone_no as phoneNo）
     @ResultMap("BaseResultMap")

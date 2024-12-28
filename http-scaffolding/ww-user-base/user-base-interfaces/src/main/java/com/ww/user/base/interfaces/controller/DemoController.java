@@ -41,7 +41,7 @@ public class DemoController implements DemoService {
     public RpcResult<String> getConfig(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
         name += "：" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
         List<Long> userIds = new ArrayList<>();
-        userIds.add(100000000L);
+        userIds.add(100000001L);
 
         List<UserEntity> userEntities = new ArrayList<>();
         UserEntity userEntity = userService.getByUserId(userIds.get(0));
@@ -75,7 +75,10 @@ public class DemoController implements DemoService {
         log.warn("log-test-warn--DemoController--hohouhou");
         log.error("log-test-error--DemoController--hohouhou");
 
-        UserEntity userEntity = userService.getByUserId(100000000);
+        // TODO：
+        List<UserEntity> userEntities = userService.getById2(100000000);
+
+        UserEntity userEntity = userService.getByUserId(100000001L);
         return RpcResult.success(requestDto.getName() + "---" + userEntity.toString());
     }
 }

@@ -18,14 +18,21 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, phone_no, e_mail, status, source, mode,
-        create_at, modify_at, version, deleted, operator
+        `id`, `phone_no`, `e_mail`, `status`, `source`, `mode`,
+        `create_at`, `modify_at`, `version`, `deleted`, `operator`
     </sql>
 
-    <select id="selectById" resultMap="BaseResultMap">
+    <select id="selectVFById" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
         from vf_user
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectById2" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from ww_user
         where id = #{id,jdbcType=BIGINT}
     </select>
 </mapper>

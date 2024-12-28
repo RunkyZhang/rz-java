@@ -36,7 +36,7 @@ public class UserDomain {
         RBucket<UserEntity> rBucket = redisMapper.getDefaultRedis().getBucket("ub.ue:" + userId);
         UserEntity userEntity = rBucket.get();
         if (null == userEntity) {
-            userEntity = userMapper.selectById(userId);
+            userEntity = userMapper.selectVFById(userId);
             if (null == userEntity) {
                 return null;
             }
@@ -46,6 +46,10 @@ public class UserDomain {
         }
 
         return userEntity;
+    }
+
+    public List<UserEntity> getById2(long id) {
+        return userMapper.selectById2(id);
     }
 
     public List<UserEntity> getByPhoneNo(String phoneNo) {

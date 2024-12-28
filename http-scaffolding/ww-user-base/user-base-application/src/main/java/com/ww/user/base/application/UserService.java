@@ -25,6 +25,10 @@ public class UserService {
         return userDomain.getByUserId(userId);
     }
 
+    public List<UserEntity> getById2(long id) {
+        return userDomain.getById2(id);
+    }
+
     public List<UserEntity> getByPhoneNo(String phoneNo) {
         return userDomain.getByPhoneNo(phoneNo);
     }
