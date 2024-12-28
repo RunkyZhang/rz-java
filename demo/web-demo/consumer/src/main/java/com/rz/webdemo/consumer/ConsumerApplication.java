@@ -14,10 +14,8 @@ public class ConsumerApplication {
     // 目录：./nacos/bin
     // 执行：sh startup.sh -m standalone
     // 查看：http://localhost:8848/nacos
+    // 访问：http://127.0.0.1:9090/hello?name=lisi，用dubbo方式调用Provider的sayHelloByName接口
     public static void main(String[] args) {
-        log.info("asdasdasdasdasd");
-
         SpringApplication.run(ConsumerApplication.class, args);
     }
-
 }
