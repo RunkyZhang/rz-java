@@ -3,8 +3,10 @@ package com.ww.user.base.interfaces.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.ww.common.base.dto.RpcResult;
 import com.ww.user.base.api.dto.SayHelloByNameRequestDto;
+import com.ww.user.base.api.entity.AccountSystemEntity;
 import com.ww.user.base.api.entity.UserEntity;
 import com.ww.user.base.api.service.DemoService;
+import com.ww.user.base.application.AccountSystemService;
 import com.ww.user.base.application.UserService;
 import com.ww.user.base.infrastructure.ConfigSource;
 import com.ww.user.base.infrastructure.rpc.RpcProxy;
@@ -17,16 +19,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
 public class DemoController implements DemoService {
     @Resource
     private UserService userService;
+    @Resource
+    private AccountSystemService accountSystemService;
     @Resource
     private ConfigSource configSource;
     @Resource
@@ -46,7 +47,7 @@ public class DemoController implements DemoService {
         List<UserEntity> userEntities = new ArrayList<>();
         UserEntity userEntity = userService.getByUserId(userIds.get(0));
         userEntities.add(userEntity);
-        userEntities.addAll(userService.getByPhoneNo(userEntity.getPhoneNo()));
+//        userEntities.addAll(userService.getByPhoneNo(userEntity.getPhoneNo()));
         Map<Long, UserEntity> userEntitiesMap = userService.getByUserIds(new HashSet<>(userIds));
         userEntities.addAll(userEntitiesMap.values());
 
@@ -75,10 +76,14 @@ public class DemoController implements DemoService {
         log.warn("log-test-warn--DemoController--hohouhou");
         log.error("log-test-error--DemoController--hohouhou");
 
-        // TODO：
-        List<UserEntity> userEntities = userService.getById2(100000000);
+        Set<Long> userIds = new HashSet<>();
+        userIds.add(100000000L);
+        userIds.add(100000047L);
+        AccountSystemEntity accountSystemEntity = accountSystemService.getById(200000000L);
+        UserEntity userEntity = userService.getByUserId(accountSystemEntity.getUserId());
+        userIds.add(userEntity.getId());
 
-        UserEntity userEntity = userService.getByUserId(100000001L);
-        return RpcResult.success(requestDto.getName() + "---" + userEntity.toString());
+        Map<Long, UserEntity> userEntities = userService.getByUserIds(userIds);
+        return RpcResult.success(requestDto.getName() + "---" + userEntities.toString());
     }
 }

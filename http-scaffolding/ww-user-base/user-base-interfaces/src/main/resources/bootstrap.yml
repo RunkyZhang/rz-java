@@ -9,36 +9,60 @@ spring:
     allow-bean-definition-overriding: true
   # sharding jdbc配置
   shardingsphere:
+    props:
+      sql-show: true # 打印sql日志
     datasource:
-      names: db0,db1
+      names: db_common,db0,db1
+      default-datasource-name: db_common
+      db_common: # 默认数据源
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/db_rz_common?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+        username: root
+        password: 12345678
       db0:
         type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/db_user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+        url: jdbc:mysql://localhost:3306/db_rz0?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
         username: root
         password: 12345678
       db1:
         type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/db_user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+        url: jdbc:mysql://localhost:3306/db_rz1?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
         username: root
         password: 12345678
     rules:
       sharding:
         tables:
           ww_user:
-            actual-data-nodes: db${0..1}.ww_user${0..1}
-            table-strategy:
-              inline:
+            actual-data-nodes: db${0..1}.ww_user${0..31}
+            database-strategy:
+              standard:
                 sharding-column: id
-                algorithm-expression: ww_user{id % 2}
-  # database：默认MySQL数据源
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/db_user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
-    username: root
-    password: 12345678
+                sharding-algorithm-name: database-inline
+            table-strategy:
+              standard:
+                sharding-column: id
+                sharding-algorithm-name: table-inline
+        sharding-algorithms:
+          database-inline: # 自定义数据库分片算法
+            type: INLINE
+            props:
+              algorithm-expression: db${id % 2}
+          table-inline: # 自定义数据表分片算法
+            type: INLINE
+            props:
+              algorithm-expression: ww_user${id % 32}
+
+
+  # database
+#  datasource:
+#    type: com.alibaba.druid.pool.DruidDataSource
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://localhost:3306/db_rz_common?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true
+#    username: root
+#    password: 12345678
   # config center：读取nacos中命名空间为dev的ww-user-base.properties和redis.properties
   cloud:
     sentinel:

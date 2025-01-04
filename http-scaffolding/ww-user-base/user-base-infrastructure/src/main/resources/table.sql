@@ -15,15 +15,38 @@ CREATE TABLE `vf_user`
 
     PRIMARY KEY (`id`),
 
-    KEY         `idx_phone_no` (`phone_no`),
-    KEY         `idx_e_mail` (`e_mail`),
-    KEY         `idx_create_at` (`create_at`)
+    KEY `idx_phone_no` (`phone_no`),
+    KEY `idx_e_mail` (`e_mail`),
+    KEY `idx_create_at` (`create_at`)
 
-) DEFAULT CHARACTER SET=utf8mb4 AUTO_INCREMENT=100000000 COMMENT='用户注册表';
+) DEFAULT CHARACTER SET = utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT = 100000000 COMMENT ='用户注册表';
+
+CREATE TABLE `ww_account_system`
+(
+    `name`               varchar(63) NOT NULL DEFAULT '' COMMENT '名称',
+    `user_id`            bigint      NOT NULL DEFAULT 0 COMMENT '用户Id',
+    `app_code`           int         NOT NULL DEFAULT 0 COMMENT '应用名称（枚举）',
+    `business_unit_code` int         NOT NULL DEFAULT 0 COMMENT '事业部Id（枚举）',
+
+    `id`                 bigint      NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `create_at`          timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `modify_at`          timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '更新时间',
+    `version`            int         NOT NULL DEFAULT 0 COMMENT '版本号并发用',
+    `deleted`            tinyint     NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `operator`           varchar(15) NOT NULL DEFAULT '' COMMENT '操作人',
+
+    PRIMARY KEY (`id`),
+
+    KEY `idx_phone_no` (`user_id`),
+    KEY `idx_create_at` (`create_at`)
+
+) DEFAULT CHARACTER SET = utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT = 100000000 COMMENT ='账号体系表';
 
 
-/*普通索引索引*/ ALTER TABLE employees ADD INDEX idx_houhou (houhou);
-/*唯一索引索引*/ ALTER TABLE employees ADD UNIQUE idx_houhou (houhou);
+/*普通索引索引*/ ALTER TABLE employees
+    ADD INDEX idx_houhou (houhou);
+/*唯一索引索引*/ ALTER TABLE employees
+    ADD UNIQUE idx_houhou (houhou);
 
 
 /*

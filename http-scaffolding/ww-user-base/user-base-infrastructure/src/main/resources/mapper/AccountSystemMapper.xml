@@ -1,14 +1,13 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ww.user.base.infrastructure.mapper.UserMapper">
-    <resultMap id="BaseResultMap" type="com.ww.user.base.api.entity.UserEntity">
+<mapper namespace="com.ww.user.base.infrastructure.mapper.AccountSystemMapper">
+    <resultMap id="BaseResultMap" type="com.ww.user.base.api.entity.AccountSystemEntity">
         <id column="id" jdbcType="BIGINT" property="id"/>
-        <result column="phone_no" jdbcType="VARCHAR" property="phoneNo"/>
-        <result column="e_mail" jdbcType="VARCHAR" property="eMail"/>
-        <result column="status" jdbcType="INTEGER" property="status"/>
-        <result column="source" jdbcType="INTEGER" property="source"/>
-        <result column="mode" jdbcType="INTEGER" property="mode"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="app_code" jdbcType="INTEGER" property="appCode"/>
+        <result column="business_unit_code" jdbcType="INTEGER" property="businessUnitCode"/>
 
         <result column="create_at" jdbcType="TIMESTAMP" property="createAt"/>
         <result column="modify_at" jdbcType="TIMESTAMP" property="modifyAt"/>
@@ -18,14 +17,14 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        `id`, `phone_no`, `e_mail`, `status`, `source`, `mode`,
+        `id`, `user_id`, `name`, `app_code`, `business_unit_code`,
         `create_at`, `modify_at`, `version`, `deleted`, `operator`
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
-        from ww_user
+        from ww_account_system
         where id = #{id,jdbcType=BIGINT}
     </select>
 </mapper>
