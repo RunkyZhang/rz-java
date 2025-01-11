@@ -13,6 +13,7 @@ import com.ww.user.base.infrastructure.rpc.RpcProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,11 +44,11 @@ public class DemoController implements DemoService {
         name += "：" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
         List<Long> userIds = new ArrayList<>();
         userIds.add(100000001L);
+        userIds.add(100000008L);
 
         List<UserEntity> userEntities = new ArrayList<>();
         UserEntity userEntity = userService.getByUserId(userIds.get(0));
         userEntities.add(userEntity);
-//        userEntities.addAll(userService.getByPhoneNo(userEntity.getPhoneNo()));
         Map<Long, UserEntity> userEntitiesMap = userService.getByUserIds(new HashSet<>(userIds));
         userEntities.addAll(userEntitiesMap.values());
 
@@ -79,9 +80,11 @@ public class DemoController implements DemoService {
         Set<Long> userIds = new HashSet<>();
         userIds.add(100000000L);
         userIds.add(100000047L);
-        AccountSystemEntity accountSystemEntity = accountSystemService.getById(200000000L);
-        UserEntity userEntity = userService.getByUserId(accountSystemEntity.getUserId());
-        userIds.add(userEntity.getId());
+        List<AccountSystemEntity> accountSystemEntities = accountSystemService.getByUserId(100000015L);
+        if (!CollectionUtils.isEmpty(accountSystemEntities)) {
+            AccountSystemEntity accountSystemEntity = accountSystemEntities.get(0);
+            userIds.add(accountSystemEntity.getUserId());
+        }
 
         Map<Long, UserEntity> userEntities = userService.getByUserIds(userIds);
         return RpcResult.success(requestDto.getName() + "---" + userEntities.toString());

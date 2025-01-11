@@ -44,16 +44,21 @@ public class RouteLocatorConfig {
         // getToPostAndAddBody路由解释：
         // demo：curl http://localhost:5050/sayHello
         // 条件：路径为/sayHello并且是Get调用
+        // 动作：使用了两个filter，一是已有的一个是自定义的changeMethod；一个是框架自带的modifyRequestBody
         // 动作：Get转为Post；header里面添加contentType值为json；添加带name字段的json格式的body
         // 使用nacos注册中心负载均衡调用：.uri("lb://ww-user-base")) = .uri("http://localhost:7070"))
         return builder.routes()
-                .route("getToPostAndAddBody", p -> p.path("/sayHello").and().method(HttpMethod.GET)
-                        .filters(f -> f.modifyRequestBody(String.class, Map.class, MediaType.APPLICATION_JSON_VALUE, (exchange, s) -> {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("name", "Get请求通过gateway转为Post请求【同时添加body】【body里面有name字段】");
-                            return Mono.just(map);
-                        }).filter(new ChangeMethodGatewayFilterFactory().apply(new ChangeMethodGatewayFilterFactory.Config(HttpMethod.POST))))
-                        .uri("lb://ww-user-base"))
+                .route("getToPostAndAddBody",
+                        p -> p
+                            .path("/sayHello").and().method(HttpMethod.GET)
+                            .filters(f -> f
+                                    .modifyRequestBody(String.class, Map.class, MediaType.APPLICATION_JSON_VALUE, (exchange, s) -> {
+                                        Map<String, String> map = new HashMap<>();
+                                        map.put("name", "Get请求通过gateway转为Post请求【同时添加body】【body里面有name字段】");
+                                        return Mono.just(map);
+                                    })
+                                    .filter(new ChangeMethodGatewayFilterFactory().apply(new ChangeMethodGatewayFilterFactory.Config(HttpMethod.POST))))
+                            .uri("lb://ww-user-base"))
                 .build();
     }
 }

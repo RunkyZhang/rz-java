@@ -1,6 +1,15 @@
 server:
   port: 5050
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway  # "*"为暴露所有端点
+  endpoint:
+    gateway: # http://localhost:5050/actuator/gateway/routes；post http://localhost:5050/actuator/gateway/refresh
+      enabled: true  # 确保Gateway端点启用
+
 spring:
   application:
     name: rz-api-gateway
@@ -19,15 +28,16 @@ spring:
           group: DEFAULT_GROUP
           refresh: true
     gateway:
+      # 还有一个get转post的路由（id：getToPostAndAddBody）在代码的bean中定义。因为需要在body中添加json数据比较复杂只能用代码定义。http://localhost:5050/sayHello
       routes:
-        # 访问http://localhost:5050/yyy时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/xxx忽略
-        # 最终访问https://www.baidu.com
+        # 访问http://localhost:5050/baidu时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/baidu忽略
+        # 最终访问https://www.bing.com
         - id: path_route1
           predicates:
-            - Path=/xxx
+            - Path=/baidu
           filters:
             - StripPrefix=1
-          uri: https://www.baidu.com
+          uri: https://www.bing.com
         # 使用Get方式访问http://localhost:5050/getConfig时候会把localhost:5050替换成localhost:7070。并把/getConfig接在后面
         # 最终访问http://localhost:7070/getConfig
         # 通过nacos注册中心负载均衡（lb://ww-user-bases = http://localhost:7070）的方式调用
@@ -46,4 +56,3 @@ spring:
           filters:
             - ChangeMethod=POST
           uri: http://localhost:7070
-        # 还有一个get转post的路由（id：getToPostAndAddBody）在代码的bean中定义。因为需要在body中添加json数据比较复杂只能用代码定义

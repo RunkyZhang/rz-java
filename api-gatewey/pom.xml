@@ -21,6 +21,12 @@
         <alibaba-cloud.version>2.2.1.RELEASE</alibaba-cloud.version>
     </properties>
     <dependencies>
+        <!-- for actuator api -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- api gateway -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
