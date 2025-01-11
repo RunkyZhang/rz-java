@@ -16,6 +16,9 @@
 
 package com.rz.api.gateway.web;
 
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Controller;
@@ -35,12 +38,17 @@ public class BasicController {
     private String userName;
     @Value("${serverAddress:11。11。11。11}")
     private String serverAddress;
+    @Value("${spring.cloud.nacos.config.server-addr}")
+    private String nacosConfigAddress;
 
     // http://127.0.0.1:5050?name=lisi
     @RequestMapping("")
     @ResponseBody
-    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) throws NacosException {
+        ConfigService configService = NacosFactory.createConfigService(nacosConfigAddress);
+        String configText = configService.getConfig("rz-api-gateway", "DEFAULT_GROUP", 5000);
+
         name += "===" + serverAddress + "---" + userName + "---" + useLocalCache;
-        return "Hello " + name;
+        return "网关服务自定义接口： " + name + "---" + configText;
     }
 }

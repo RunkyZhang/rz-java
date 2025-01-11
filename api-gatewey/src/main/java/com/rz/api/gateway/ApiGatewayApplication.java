@@ -1,8 +1,13 @@
 package com.rz.api.gateway;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import java.util.Properties;
 
 // 启动（vm options）参数加入-Dspring.cloud.bootstrap.enabled=true。使用bootstrap.yml为启动配置。nacos配置中心需要bootstrap.yml
 @SpringBootApplication
@@ -11,7 +16,17 @@ public class ApiGatewayApplication {
     // demo：curl http://localhost:5050/sayHello
     // 路由策略：（getToPostAndAddBody
     // 调用路径：api gateway -》user-base
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NacosException {
+//        String serverAddr = "localhost";
+//        String dataId = "rz-api-gateway";
+//        String group = "DEFAULT_GROUP";
+//        Properties properties = new Properties();
+//        properties.put(PropertyKeyConst.SERVER_ADDR, serverAddr);
+//        properties.put(PropertyKeyConst.NAMESPACE, "dev");
+//        ConfigService configService = NacosFactory.createConfigService(properties);
+//        String content = configService.getConfig(dataId, group, 5000);
+//        System.out.println(content);
+
         SpringApplication.run(ApiGatewayApplication.class, args);
     }
 }

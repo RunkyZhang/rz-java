@@ -30,11 +30,11 @@ spring:
     gateway:
       # 还有一个get转post的路由（id：getToPostAndAddBody）在代码的bean中定义。因为需要在body中添加json数据比较复杂只能用代码定义。http://localhost:5050/sayHello
       routes:
-        # 访问http://localhost:5050/baidu时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/baidu忽略
+        # 访问http://localhost:5050/google时候会把localhost:5050替换成localhost:5050。但是有StripPrefix=1，就会把后/google忽略
         # 最终访问https://www.bing.com
         - id: path_route1
           predicates:
-            - Path=/baidu
+            - Path=/google
           filters:
             - StripPrefix=1
           uri: https://www.bing.com
@@ -56,3 +56,19 @@ spring:
           filters:
             - ChangeMethod=POST
           uri: http://localhost:7070
+
+
+# 在nacos中也配置路由侧路。因为naocs中配置后加载，所以会完全覆盖本地路由配置。但不包括bean的方式添加的路由
+# spring.cloud.gateway.routes[0].id=path_route1
+# spring.cloud.gateway.routes[0].predicates[0]=Path=/google
+# spring.cloud.gateway.routes[0].filters[0]=StripPrefix=1
+# spring.cloud.gateway.routes[0].uri=https://www.baidu.com
+# spring.cloud.gateway.routes[1].id=path_route2
+# spring.cloud.gateway.routes[1].predicates[0]=Path=/getConfig
+# spring.cloud.gateway.routes[1].predicates[1]=Method=GET
+# spring.cloud.gateway.routes[1].uri=lb://ww-user-base
+# spring.cloud.gateway.routes[2].id=path_route3
+# spring.cloud.gateway.routes[2].predicates[0]=Path=/sayHello
+# spring.cloud.gateway.routes[2].predicates[1]=Method=DELETE
+# spring.cloud.gateway.routes[2].filters[0]=ChangeMethod=POST
+# spring.cloud.gateway.routes[2].uri=http://localhost:7070

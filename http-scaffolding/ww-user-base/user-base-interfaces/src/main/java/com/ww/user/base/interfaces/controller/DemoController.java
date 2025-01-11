@@ -1,6 +1,10 @@
 package com.ww.user.base.interfaces.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.ww.common.base.dto.RpcResult;
 import com.ww.user.base.api.dto.SayHelloByNameRequestDto;
 import com.ww.user.base.api.entity.AccountSystemEntity;
@@ -36,12 +40,25 @@ public class DemoController implements DemoService {
 
     @Value("${useLocalCache:false}")
     private boolean useLocalCache;
+    @Value("${spring.cloud.nacos.config.server-addr}")
+    private String nacosConfigAddress;
+    @Value("${spring.cloud.nacos.config.namespace}")
+    private String nacosConfigNamespace;
 
     // @RequestMapping 会自动生成post，get，delete等多个接口
     @SentinelResource(value = "DemoController.getConfig", blockHandler = "getConfigLimited", blockHandlerClass = ApiFlowLimiting.class)
     @GetMapping("/getConfig")
-    public RpcResult<String> getConfig(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+    public RpcResult<String> getConfig(@RequestParam(name = "name", defaultValue = "unknown user") String name) throws NacosException {
         name += "：" + configSource.getServerAddress() + "---" + configSource.getUserName() + "---" + useLocalCache;
+
+        String dataId = "redis.properties";
+        String group = "DEFAULT_GROUP";
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, nacosConfigAddress);
+        properties.put(PropertyKeyConst.NAMESPACE, nacosConfigNamespace);
+        ConfigService configService = NacosFactory.createConfigService(properties);
+        String configContent = configService.getConfig(dataId, group, 5000);
+
         List<Long> userIds = new ArrayList<>();
         userIds.add(100000001L);
         userIds.add(100000008L);
@@ -56,7 +73,7 @@ public class DemoController implements DemoService {
             throw new RuntimeException("测试异常情况，几率为50%。");
         }
 
-        return RpcResult.success(name + "---hello!---" + userEntities);
+        return RpcResult.success(name + "---hello!---" + userEntities + "---" + configContent);
     }
 
     @GetMapping("/testInvokeFlowBreaking")
