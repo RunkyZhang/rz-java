@@ -117,24 +117,27 @@ feign:
 
 # swagger。默认关闭，在nacos中开启
 swagger:
-  enable: false
+  enable: true
 
-# wangwang
-#  cloud:
-#    nacos:
-#      username: nacos
-#      password: crNbULLpCuhB9YeB
-#      discovery:
-#        server-addr: 47.101.54.47:8848
-#      config:
-#        server-addr: 47.101.54.47:8848
-#        file-extension: properties
-#        namespace: dev
-#        extension-configs[0]:
-#          data-id: redis.properties
-#          group: DEFAULT_GROUP
-#          refresh: true
+# redis
+redis:
+  config:
+    address: redis://localhost:6379
+    password: ''
+    database: 0
 
+# xxl job
+xxl:
+  job:
+    accessToken: 5A3E7A0672BC42E7ED35741DB05EB76C
+    admin:
+      addresses: http://10.8.3.181:8888/xxl-job-admin
+    executor:
+      appname: ww-user-base
+      ip: ''
+      port: 9666
+      logpath: ''
+      logretentiondays: -1
 
 # sentinel的配置保存在nacos中通过datasource配置。dataId: ww-user-base-flowLimiting-sentinel.json配置文件配置了api限流
 # 限流

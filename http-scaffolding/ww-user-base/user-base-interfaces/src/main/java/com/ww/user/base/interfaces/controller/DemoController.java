@@ -9,7 +9,7 @@ import com.ww.common.base.dto.RpcResult;
 import com.ww.user.base.api.dto.SayHelloByNameRequestDto;
 import com.ww.user.base.api.entity.AccountSystemEntity;
 import com.ww.user.base.api.entity.UserEntity;
-import com.ww.user.base.api.service.DemoService;
+import com.ww.user.base.api.service.DemoApi;
 import com.ww.user.base.application.AccountSystemService;
 import com.ww.user.base.application.UserService;
 import com.ww.user.base.infrastructure.ConfigSource;
@@ -28,7 +28,7 @@ import java.util.*;
 
 @Slf4j
 @RestController
-public class DemoController implements DemoService {
+public class DemoController implements DemoApi {
     @Resource
     private UserService userService;
     @Resource

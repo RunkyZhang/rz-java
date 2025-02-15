@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @Api(tags = "用户示例接口")
 @FeignClient("ww-user-base")
-public interface DemoService {
+public interface DemoApi {
     @ApiOperation(value = "说你好")
     @PostMapping("/sayHello")
     RpcResult<String> sayHelloByName(@RequestBody SayHelloByNameRequestDto requestDto);

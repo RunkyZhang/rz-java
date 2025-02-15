@@ -56,7 +56,7 @@ public class ControllerExceptionAdvice {
                 exceptionMessage = methodArgumentNotValidException.getBindingResult().getFieldError().getDefaultMessage();
             }
         } else {
-            exceptionMessage = "系统异常，请联系管理员。";
+            exceptionMessage = "系统异常，请联系管理员。error: " + e.getMessage();
         }
 
         if (errorLogLevel) {

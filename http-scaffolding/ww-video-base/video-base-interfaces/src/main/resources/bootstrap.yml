@@ -46,18 +46,9 @@ feign:
 swagger:
   enable: false
 
-# wang-wang
-#  cloud:
-#    nacos:
-#      username: nacos
-#      password: crNbULLpCuhB9YeB
-#      discovery:
-#        server-addr: 47.101.54.47:8848
-#      config:
-#        server-addr: 47.101.54.47:8848
-#        file-extension: properties
-#        namespace: dev
-#        extension-configs[0]:
-#          data-id: redis.properties
-#          group: DEFAULT_GROUP
-#          refresh: true
+# redis
+redis:
+  config:
+    address: redis://localhost:6379
+    password: ''
+    database: 0

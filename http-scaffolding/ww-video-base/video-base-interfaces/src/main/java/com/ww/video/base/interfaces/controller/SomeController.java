@@ -2,7 +2,7 @@ package com.ww.video.base.interfaces.controller;
 
 import com.ww.common.base.dto.RpcResult;
 import com.ww.video.base.api.dto.SayHelloByNameRequestDto;
-import com.ww.video.base.api.service.SomeService;
+import com.ww.video.base.api.service.SomeApi;
 import com.ww.video.base.application.VideoService;
 import com.ww.video.base.infrastructure.ConfigSource;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 
 @RestController
-public class SomeController implements SomeService {
+public class SomeController implements SomeApi {
     @Resource
     private VideoService userService;
     @Resource

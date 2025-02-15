@@ -19,18 +19,6 @@
             <artifactId>user-base-application</artifactId>
         </dependency>
 
-        <!-- ribbon -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.cloud</groupId>-->
-<!--            <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>-->
-<!--        </dependency>-->
-
-        <!-- openfeign -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.cloud</groupId>-->
-<!--            <artifactId>spring-cloud-starter-openfeign</artifactId>-->
-<!--        </dependency>-->
-
         <!-- shardingsphere（5.2.1有兼容性问题)-->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
@@ -43,4 +31,25 @@
             <artifactId>springfox-swagger-ui</artifactId>
         </dependency>
     </dependencies>
+
+    <!-- 打包执行：指定main函数；把依赖包打包到一个jar中 -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>com.ww.user.base.interfaces.UserBaseApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

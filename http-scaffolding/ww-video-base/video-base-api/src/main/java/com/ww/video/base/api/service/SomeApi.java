@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @Api(tags = "视频示例接口")
 @FeignClient("ww-video-base")
-public interface SomeService {
+public interface SomeApi {
     /**
      * 根据名字say hello
      *
