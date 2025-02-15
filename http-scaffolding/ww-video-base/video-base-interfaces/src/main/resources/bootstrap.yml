@@ -35,16 +35,25 @@ mybatis:
 feign:
   client:
     config:
-      default: # default全局的配置
-        loggerLevel: BASIC # 日志级别，BASIC就是基本的请求和响应信息
+      # default全局的配置
+      default:
+        # 日志级别，BASIC就是基本的请求和响应信息
+        loggerLevel: BASIC
+        # 接口调用超时时间
+        read-timeout: 1000
+        # 连接超时时间，毫秒
+        connect-timeout: 5000
   httpclient:
-    enabled: true # 开启feign对HttpClient的支持。原http调用工具无线程池性能低
-    max-connections: 200 # 最大的连接数
-    max-connections-per-route: 50 # 每个路径的最大连接数
+    # 开启feign对HttpClient的支持。原http调用工具无线程池性能低
+    enabled: true
+    # 最大的连接数
+    max-connections: 200
+    # 每个路径的最大连接数
+    max-connections-per-route: 50
 
 # swagger。默认关闭，在nacos中开启
 swagger:
-  enable: false
+  enable: true
 
 # redis
 redis:

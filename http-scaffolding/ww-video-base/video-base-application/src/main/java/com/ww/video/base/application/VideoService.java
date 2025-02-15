@@ -17,8 +17,12 @@ public class VideoService {
 
     public String getByVideoId(long videoId) {
         VideoEntity videoEntity = videoDomain.getByVideoId(videoId);
-        RpcResult<String> rpcResult = rpcProxy.sayHello("doooeeee");
+        String result = "";
+        RpcResult<String> rpcResult = rpcProxy.sayHello("sayHello");
+        result += rpcResult.toString();
+        rpcResult = rpcProxy.sayHouHou("sayHouHou");
+        result += rpcResult.toString();
 
-        return rpcResult + "------" + videoEntity.toString();
+        return result + "------" + videoEntity.toString();
     }
 }
