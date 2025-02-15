@@ -6,6 +6,7 @@ import com.ww.common.base.BusinessException;
 import com.ww.common.base.dto.RpcResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,10 +45,18 @@ public class ControllerExceptionAdvice {
         // error log
         Long code = -1L;
         boolean errorLogLevel = true;
+        String exceptionMessage = e.getMessage();
         if (e instanceof BusinessException) {
             BusinessException businessException = (BusinessException) e;
             code = businessException.getCode();
             errorLogLevel = businessException.isErrorLogLevel();
+        } else if (e instanceof MethodArgumentNotValidException) {
+            MethodArgumentNotValidException methodArgumentNotValidException = (MethodArgumentNotValidException) e;
+            if (null != methodArgumentNotValidException.getBindingResult() && null != methodArgumentNotValidException.getBindingResult().getFieldError()) {
+                exceptionMessage = methodArgumentNotValidException.getBindingResult().getFieldError().getDefaultMessage();
+            }
+        } else {
+            exceptionMessage = "系统异常，请联系管理员。";
         }
 
         if (errorLogLevel) {
@@ -79,6 +88,6 @@ public class ControllerExceptionAdvice {
         }
 
         ControllerHandlerInterceptor.accessLogContextThreadLocal.remove();
-        return RpcResult.error(accessLogContext.getLocalApplicationName(), code, e.getMessage());
+        return RpcResult.error(accessLogContext.getLocalApplicationName(), code, exceptionMessage);
     }
 }

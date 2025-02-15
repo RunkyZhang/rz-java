@@ -11,4 +11,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface AccessLog {
     int sampleRate() default 10;
     String strategyName() default "";
+    String prefix() default "rpc";
 }
