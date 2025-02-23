@@ -49,6 +49,7 @@ public class RpcProxy {
     public RpcResult<String> sayHouHou(String name) {
         SayHouHouByNameRequestDto requestDto = new SayHouHouByNameRequestDto();
         requestDto.setName(name);
+        // 模拟偶发超时，50%几率超时。因为一个使用默认的feign配置的1000ms超时，一个使用自定义1500ms超时时间
         if (0 == System.currentTimeMillis() % 2) {
             return houHouApi.sayHouHouByName(requestDto);
         } else {

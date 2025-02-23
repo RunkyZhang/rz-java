@@ -2,7 +2,7 @@ package com.ww.common.architecture.login;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
