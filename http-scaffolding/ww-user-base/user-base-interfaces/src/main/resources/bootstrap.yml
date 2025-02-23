@@ -54,15 +54,7 @@ spring:
             type: INLINE
             props:
               algorithm-expression: ww_user${id % 32}
-
-
-  # database
-#  datasource:
-#    type: com.alibaba.druid.pool.DruidDataSource
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/db_rz_common?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowMultiQueries=true&useSSL=false
-#    username: root
-#    password: 12345678
+  # 微服务配置
   cloud:
     # 负载均衡禁用ribbon。引入loadbalancer并使用
     loadbalancer:
@@ -77,6 +69,9 @@ spring:
         flowLimiting:
           nacos:
             server-addr: localhost:8848
+            # 不加入账号密码配置，会报错
+            username: nacos
+            password: nacos
             dataId: ww-user-base-flowLimiting-sentinel.json
             groupId: DEFAULT_GROUP
             namespace: dev
@@ -86,6 +81,9 @@ spring:
         flowBreaking:
           nacos:
             server-addr: localhost:8848
+            # 不加入账号密码配置，会报错
+            username: nacos
+            password: nacos
             dataId: ww-user-base-flowBreaking-sentinel.json
             groupId: DEFAULT_GROUP
             namespace: dev
@@ -94,6 +92,9 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
+        metadata:
+          swagger-status: ${swagger.enable}
+        weight: 100
       config:
         server-addr: localhost:8848
         file-extension: properties

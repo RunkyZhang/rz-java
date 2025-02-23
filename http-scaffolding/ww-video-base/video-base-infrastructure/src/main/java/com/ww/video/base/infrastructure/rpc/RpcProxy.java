@@ -8,6 +8,7 @@ import com.ww.user.base.api.service.DemoApi;
 import com.ww.user.base.api.service.HouHouApi;
 import com.ww.video.base.infrastructure.ConfigSource;
 import feign.Request;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class RpcProxy {
     private final Map<String, Request.Options> options = new HashMap<>();
@@ -51,6 +53,7 @@ public class RpcProxy {
         requestDto.setName(name);
         // 模拟偶发超时，50%几率超时。因为一个使用默认的feign配置的1000ms超时，一个使用自定义1500ms超时时间
         if (0 == System.currentTimeMillis() % 2) {
+            log.warn("may time out for rpc");
             return houHouApi.sayHouHouByName(requestDto);
         } else {
             return houHouApiFeignClient.sayHouHouByName(requestDto, buildOptions(1500));
