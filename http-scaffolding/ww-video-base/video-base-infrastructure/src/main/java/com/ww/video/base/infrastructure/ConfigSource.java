@@ -17,4 +17,6 @@ public class ConfigSource {
     private String serverAddress;
     @Value("${feign.client.config.default.connect-timeout:5000}")
     private long feignClientConnectTimeout;
+    @Value("${feign.client.config.default.read-timeout:1000}")
+    private long feignClientReadTimeout;
 }
