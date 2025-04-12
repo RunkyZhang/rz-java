@@ -16,6 +16,8 @@
 
 package com.rz.web.demo.server;
 
+import io.modelcontextprotocol.server.McpSyncServer;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,11 +29,20 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 @Controller
 public class BasicController {
+    @Resource
+    private McpSyncServer mcpSyncServer;
 
     // http://127.0.0.1:8080/hello?name=lisi
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        return "Server-Hello " + name;
+    }
+
+    @GetMapping("/mcp")
+    @ResponseBody
+    public String mcpNotify(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        mcpSyncServer.notifyResourcesListChanged();
         return "Server-Hello " + name;
     }
 

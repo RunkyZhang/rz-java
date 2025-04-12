@@ -30,5 +30,17 @@
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-spring-webmvc</artifactId>
         </dependency>
+
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- log -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -16,8 +16,13 @@
 
 package com.rz.web.demo.client;
 
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -27,6 +32,8 @@ import org.springframework.web.bind.annotation.*;
 public class BasicController {
     @Resource
     private ServerFeignClient serverFeignClient;
+    @Resource
+    private McpSyncClient mcpSyncClient;
 
     // http://127.0.0.1:8081/hello?name=lisi
     @GetMapping("/hello")
@@ -35,6 +42,34 @@ public class BasicController {
         String result = serverFeignClient.hello(name);
 
         return "Client-Hello " + name + ": " + result;
+    }
+
+    @GetMapping("/mcp")
+    @ResponseBody
+    public String mcp(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        McpSchema.Implementation implementation = mcpSyncClient.getServerInfo();
+        McpSchema.ServerCapabilities serverCapabilities = mcpSyncClient.getServerCapabilities();
+        McpSchema.ListToolsResult listToolsResult = mcpSyncClient.listTools();
+        McpSchema.ListPromptsResult listPromptsResult = mcpSyncClient.listPrompts();
+        McpSchema.ListResourcesResult listResourcesResult = mcpSyncClient.listResources();
+        McpSchema.ListResourceTemplatesResult listResourceTemplatesResult = mcpSyncClient.listResourceTemplates();
+
+        Map<String, Object> arguments = new HashMap<>();
+
+        McpSchema.ReadResourceRequest readResourceRequest = new McpSchema.ReadResourceRequest("custom://resource");
+        McpSchema.ReadResourceResult readResourceResult = mcpSyncClient.readResource(readResourceRequest);
+
+        McpSchema.GetPromptRequest getPromptRequest = new McpSchema.GetPromptRequest("greeting", null);
+        McpSchema.GetPromptResult getPromptResult = mcpSyncClient.getPrompt(getPromptRequest);
+
+        arguments.put("name", "John");
+        McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest("calculator", arguments);
+        McpSchema.CallToolResult callToolResult = mcpSyncClient.callTool(callToolRequest);
+
+        return "Client-Hello " + name + ": " + implementation + "; " + serverCapabilities + "; " +
+                listToolsResult + "; " + listPromptsResult + "; " + listResourcesResult + "; " +
+                listResourceTemplatesResult + "; " + readResourceResult + "; " + getPromptResult + "; " +
+                callToolResult;
     }
 
     // http://127.0.0.1:8081/html
