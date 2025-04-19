@@ -1,18 +1,22 @@
 package com.rz.web.demo.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rz.web.demo.server.tool.McpTool;
+import com.rz.web.demo.server.tool.McpToolCollection;
 import io.modelcontextprotocol.server.McpAsyncServer;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.WebMvcSseServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,6 +41,9 @@ public class AppConfig {
             "              }\n" +
             "            }";
 
+    @Resource
+    private McpToolCollection mcpToolCollection;
+
     @Bean
     public WebMvcSseServerTransportProvider webMvcSseServerTransportProvider() {
         return new WebMvcSseServerTransportProvider(new ObjectMapper(), MESSAGE_ENDPOINT);
@@ -60,18 +67,18 @@ public class AppConfig {
                         .build())
                 .build();
 
-        McpServerFeatures.SyncToolSpecification syncToolSpecification = new McpServerFeatures.SyncToolSpecification(
-                new McpSchema.Tool("calculator", "Basic calculator", schema),
-                (exchange, arguments) -> {
-                    // 工具实现
-                    McpSchema.TextContent textContent = new McpSchema.TextContent(
-                            Collections.singletonList(McpSchema.Role.USER),
-                            1.0,
-                            "The textContent is " + arguments
-                    );
-                    return new McpSchema.CallToolResult(Collections.singletonList(textContent), false);
-                }
-        );
+//        McpServerFeatures.SyncToolSpecification syncToolSpecification = new McpServerFeatures.SyncToolSpecification(
+//                new McpSchema.Tool("calculator", "Basic calculator", schema),
+//                (exchange, arguments) -> {
+//                    // 工具实现
+//                    McpSchema.TextContent textContent = new McpSchema.TextContent(
+//                            Collections.singletonList(McpSchema.Role.USER),
+//                            1.0,
+//                            "The textContent is " + arguments
+//                    );
+//                    return new McpSchema.CallToolResult(Collections.singletonList(textContent), false);
+//                }
+//        );
 
         // Sync resource specification
         McpServerFeatures.SyncResourceSpecification syncResourceSpecification = new McpServerFeatures.SyncResourceSpecification(
@@ -103,7 +110,10 @@ public class AppConfig {
         );
 
         // 注册工具、资源和提示
-        mcpSyncServer.addTool(syncToolSpecification);
+        Collection<McpTool> mcpTools = this.mcpToolCollection.getAll();
+        for (McpTool mcpTool : mcpTools) {
+            mcpSyncServer.addTool(mcpTool.buildTool());
+        }
         mcpSyncServer.addResource(syncResourceSpecification);
         mcpSyncServer.addPrompt(syncPromptSpecification);
 

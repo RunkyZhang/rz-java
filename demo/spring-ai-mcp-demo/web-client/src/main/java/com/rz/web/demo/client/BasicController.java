@@ -62,7 +62,9 @@ public class BasicController {
         McpSchema.GetPromptRequest getPromptRequest = new McpSchema.GetPromptRequest("greeting", null);
         McpSchema.GetPromptResult getPromptResult = mcpSyncClient.getPrompt(getPromptRequest);
 
-        arguments.put("name", "John");
+        arguments.put("operation", "wang2mazi");
+        arguments.put("a", 333);
+        arguments.put("b", 444);
         McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest("calculator", arguments);
         McpSchema.CallToolResult callToolResult = mcpSyncClient.callTool(callToolRequest);
 
