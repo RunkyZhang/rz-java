@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface McpTool {
     default McpServerFeatures.SyncToolSpecification buildTool() {
-        return new McpServerFeatures.SyncToolSpecification(new McpSchema.Tool(getName(), getDescription(), getSchema()), this::callback);
+        return new McpServerFeatures.SyncToolSpecification(new McpSchema.Tool(getName(), getDescription(), getInputSchema()), this::callback);
     }
 
     String getName();
@@ -16,8 +16,8 @@ public interface McpTool {
     // 工具描述，可使用Prompt
     String getDescription();
 
-    // 参数模版
-    String getSchema();
+    // 入参数模版
+    String getInputSchema();
 
     McpSchema.CallToolResult callback(McpSyncServerExchange exchange, Map<String, Object> arguments);
 }

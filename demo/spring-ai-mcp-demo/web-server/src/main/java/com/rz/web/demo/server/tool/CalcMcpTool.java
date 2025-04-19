@@ -14,17 +14,17 @@ import java.util.Map;
 
 @Slf4j
 @Service
-public class CalculatorMcpTool implements McpTool {
+public class CalcMcpTool implements McpTool {
     @Override
     public String getName() {
-        return "calculator";
+        return "calc";
     }
 
     @Override
     public String getDescription() {
-        return "简介：runky的基础计算；" +
+        return "简介：runky的另一个基础计算；" +
                 "功能：根据传入不同的操作类型，对a和b做不同的计算；" +
-                "参数说明：operation类型包括houhou，wang2mazi；" +
+                "参数说明：operation类型包括zhenxiang，wang2mazi；" +
                 "参数说明：a和b都是int类型。";
     }
 
@@ -35,8 +35,6 @@ public class CalculatorMcpTool implements McpTool {
                 .withEnum("operation", true, Arrays.asList("houhou", "wang2mazi", "zhenxiang"))
                 .withNumber("a", true)
                 .withNumber("b", true)
-                .withArray("c", false, new StringArgument())
-                .withArray("d", false, new EnumArgument(Arrays.asList(111, 222)))
                 .build();
     }
 
