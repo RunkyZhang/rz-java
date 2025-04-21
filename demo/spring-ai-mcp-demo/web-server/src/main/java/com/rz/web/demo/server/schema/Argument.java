@@ -9,6 +9,7 @@ import org.springframework.util.Assert;
 @Data
 public class Argument {
     protected String type;
+    protected String description;
 
     public Argument() {
     }
