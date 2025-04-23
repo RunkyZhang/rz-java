@@ -16,10 +16,10 @@ import java.util.Map;
 
 @Slf4j
 @Service
-public class CalculatorMcpTool implements McpTool {
+public class CalcMcpTool implements McpTool {
     @Override
     public String getName() {
-        return "calculator";
+        return "calc";
     }
 
     @Override
