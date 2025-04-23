@@ -24,23 +24,6 @@ import java.util.List;
 public class AppConfig {
     private static final String MESSAGE_ENDPOINT = "/mcp/message";
 
-    // 同步工具规范
-    private static final String schema = "{\n" +
-            "              \"type\" : \"object\",\n" +
-            "              \"id\" : \"urn:jsonschema:Operation\",\n" +
-            "              \"properties\" : {\n" +
-            "                \"operation\" : {\n" +
-            "                  \"type\" : \"string\"\n" +
-            "                },\n" +
-            "                \"a\" : {\n" +
-            "                  \"type\" : \"number\"\n" +
-            "                },\n" +
-            "                \"b\" : {\n" +
-            "                  \"type\" : \"number\"\n" +
-            "                }\n" +
-            "              }\n" +
-            "            }";
-
     @Resource
     private McpToolCollection mcpToolCollection;
 
@@ -67,18 +50,6 @@ public class AppConfig {
                         .build())
                 .build();
 
-//        McpServerFeatures.SyncToolSpecification syncToolSpecification = new McpServerFeatures.SyncToolSpecification(
-//                new McpSchema.Tool("calculator", "Basic calculator", schema),
-//                (exchange, arguments) -> {
-//                    // 工具实现
-//                    McpSchema.TextContent textContent = new McpSchema.TextContent(
-//                            Collections.singletonList(McpSchema.Role.USER),
-//                            1.0,
-//                            "The textContent is " + arguments
-//                    );
-//                    return new McpSchema.CallToolResult(Collections.singletonList(textContent), false);
-//                }
-//        );
 
         // Sync resource specification
         McpServerFeatures.SyncResourceSpecification syncResourceSpecification = new McpServerFeatures.SyncResourceSpecification(
@@ -112,7 +83,7 @@ public class AppConfig {
         // 注册工具、资源和提示
         Collection<McpTool> mcpTools = this.mcpToolCollection.getAll();
         for (McpTool mcpTool : mcpTools) {
-            mcpSyncServer.addTool(mcpTool.buildTool());
+            mcpSyncServer.addTool(mcpTool.buildSyncTool());
         }
         mcpSyncServer.addResource(syncResourceSpecification);
         mcpSyncServer.addPrompt(syncPromptSpecification);
@@ -127,7 +98,8 @@ public class AppConfig {
         return mcpSyncServer;
     }
 
-    private void buildAsyncServer(WebMvcSseServerTransportProvider webMvcSseServerTransportProvider) {
+    //@Bean
+    public McpAsyncServer mcpAsyncServer(WebMvcSseServerTransportProvider webMvcSseServerTransportProvider) {
         McpAsyncServer mcpAsyncServer = McpServer.async(webMvcSseServerTransportProvider)
                 .serverInfo("demo-async-server", "1.0.0")
                 .capabilities(McpSchema.ServerCapabilities.builder()
@@ -138,18 +110,18 @@ public class AppConfig {
                         .build())
                 .build();
 
-        McpServerFeatures.AsyncToolSpecification asyncToolSpecification = new McpServerFeatures.AsyncToolSpecification(
-                new McpSchema.Tool("calculator", "Basic calculator", schema),
-                (exchange, arguments) -> {
-                    // Tool implementation
-                    McpSchema.TextContent textContent = new McpSchema.TextContent(
-                            Collections.singletonList(McpSchema.Role.USER),
-                            1.0,
-                            "The textContent is " + arguments
-                    );
-                    return Mono.just(new McpSchema.CallToolResult(Collections.singletonList(textContent), false));
-                }
-        );
+//        McpServerFeatures.AsyncToolSpecification asyncToolSpecification = new McpServerFeatures.AsyncToolSpecification(
+//                new McpSchema.Tool("calculator", "Basic calculator", schema),
+//                (exchange, arguments) -> {
+//                    // Tool implementation
+//                    McpSchema.TextContent textContent = new McpSchema.TextContent(
+//                            Collections.singletonList(McpSchema.Role.USER),
+//                            1.0,
+//                            "The textContent is " + arguments
+//                    );
+//                    return Mono.just(new McpSchema.CallToolResult(Collections.singletonList(textContent), false));
+//                }
+//        );
 
         // Async resource specification
         McpServerFeatures.AsyncResourceSpecification asyncResourceSpecification = new McpServerFeatures.AsyncResourceSpecification(
@@ -181,7 +153,10 @@ public class AppConfig {
         );
 
         // 注册工具、资源和提示
-        mcpAsyncServer.addTool(asyncToolSpecification);
+        Collection<McpTool> mcpTools = this.mcpToolCollection.getAll();
+        for (McpTool mcpTool : mcpTools) {
+            mcpAsyncServer.addTool(mcpTool.buildAsyncTool());
+        }
         mcpAsyncServer.addResource(asyncResourceSpecification);
         mcpAsyncServer.addPrompt(asyncPromptSpecification);
 
@@ -191,5 +166,7 @@ public class AppConfig {
                 .logger("custom-logger")
                 .data("Custom log message")
                 .build());
+
+        return mcpAsyncServer;
     }
 }

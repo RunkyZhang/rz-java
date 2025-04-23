@@ -10,6 +10,7 @@ import org.springframework.util.Assert;
 public class Argument {
     protected String type;
     protected String description;
+    protected String format;
 
     public Argument() {
     }

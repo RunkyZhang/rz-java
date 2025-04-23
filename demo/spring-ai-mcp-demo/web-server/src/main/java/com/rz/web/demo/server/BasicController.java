@@ -29,8 +29,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 @Controller
 public class BasicController {
-    @Resource
-    private McpSyncServer mcpSyncServer;
+//    @Resource
+//    private McpSyncServer mcpSyncServer;
 
     // http://127.0.0.1:8080/hello?name=lisi
     @GetMapping("/hello")
@@ -42,7 +42,7 @@ public class BasicController {
     @GetMapping("/mcp")
     @ResponseBody
     public String mcpNotify(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
-        mcpSyncServer.notifyResourcesListChanged();
+        //mcpSyncServer.notifyResourcesListChanged();
         return "Server-Hello " + name;
     }
 
