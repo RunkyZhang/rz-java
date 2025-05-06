@@ -1,18 +1,14 @@
 package com.rz.web.demo.server;
 
-import com.rz.web.demo.server.schema.ArrayArgument;
-import com.rz.web.demo.server.schema.EnumArgument;
-import com.rz.web.demo.server.schema.InputSchema;
-import com.rz.web.demo.server.schema.StringArgument;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.util.Arrays;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * Hello world!
  */
 @SpringBootApplication
+@EnableFeignClients(basePackages = {"com.rz.web.demo.server.rpc"})
 public class ServerApp {
     public static void main(String[] args) {
         SpringApplication.run(ServerApp.class, args);

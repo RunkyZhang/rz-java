@@ -65,7 +65,7 @@ public class BasicController {
         arguments.put("operation", "wang2mazi");
         arguments.put("a", 333);
         arguments.put("b", 444);
-        McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest("calculator", arguments);
+        McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest("calc", arguments);
         McpSchema.CallToolResult callToolResult = mcpSyncClient.callTool(callToolRequest);
 
         return "Client-Hello " + name + ": " + implementation + "; " + serverCapabilities + "; " +

@@ -19,6 +19,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- spring rpc -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- feign-httpclient：替换feign原http调用工具，为了优化连接池，通过配置替换 -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+        </dependency>
+
         <!-- MCP Core -->
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
