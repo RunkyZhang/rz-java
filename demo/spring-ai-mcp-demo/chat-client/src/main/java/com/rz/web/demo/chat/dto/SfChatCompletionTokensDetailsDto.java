@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class SfChatCompletionTokensDetailsDto {
-    private int reasoningTokens;
+    private int reasoning_tokens;
 }

@@ -16,6 +16,8 @@
 
 package com.rz.web.demo.chat;
 
+import com.rz.web.demo.chat.dto.RpcResult;
+import com.rz.web.demo.chat.rpc.RpcProxy;
 import com.rz.web.demo.chat.rpc.ServerFeignClient;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 public class BasicController {
     @Resource
     private ServerFeignClient serverFeignClient;
+    @Resource
+    private RpcProxy rpcProxy;
 
     // http://127.0.0.1:8081/hello?name=lisi
     @GetMapping("/hello")
@@ -36,6 +40,12 @@ public class BasicController {
         String result = serverFeignClient.hello(name);
 
         return "Client-Hello " + name + ": " + result;
+    }
+
+    @GetMapping("/chat")
+    @ResponseBody
+    public RpcResult<Object> chat(@RequestParam(name = "message", defaultValue = "现在是什么世纪？") String message) {
+        return rpcProxy.chat(message);
     }
 
     // http://127.0.0.1:8081/html

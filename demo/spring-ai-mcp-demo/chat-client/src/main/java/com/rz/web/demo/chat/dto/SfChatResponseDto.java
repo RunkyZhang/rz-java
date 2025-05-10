@@ -14,5 +14,10 @@ public class SfChatResponseDto implements Serializable {
     private String model;
     private List<SfChatChoiceDto> choices;
     private SfChatTokenUsageDto usage;
-    private String systemFingerprint;
+    private String system_fingerprint;
+
+    // 400 429 503
+    private int code;
+    private String message;
+    private String data;
 }

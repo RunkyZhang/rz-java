@@ -6,5 +6,5 @@ import lombok.Data;
 public class SfChatOutMessageDto {
     private String role;
     private String content;
-    private String reasoningContent;
+    private String reasoning_content;
 }

@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class SfChatTokenUsageDto {
-    private int promptTokens;
-    private int completionTokens;
-    private int totalTokens;
-    private SfChatCompletionTokensDetailsDto completionTokensDetails;
+    private int prompt_tokens;
+    private int completion_tokens;
+    private int total_tokens;
+    private SfChatCompletionTokensDetailsDto completion_tokens_details;
 }
