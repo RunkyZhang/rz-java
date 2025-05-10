@@ -10,6 +10,7 @@
     <description>spring-ai-mcp-demo</description>
 
     <modules>
+        <module>chat-client</module>
         <module>web-server</module>
         <module>web-client</module>
     </modules>
