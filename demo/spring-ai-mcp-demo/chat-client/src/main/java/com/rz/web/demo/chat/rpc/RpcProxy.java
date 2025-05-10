@@ -17,6 +17,8 @@ import java.util.Arrays;
 public class RpcProxy {
     @Resource
     private SiliconFlowFeignClient siliconFlowFeignClient;
+    @Resource
+    private SiliconFlowStreamFeignClient siliconFlowStreamFeignClient;
 
     public RpcResult<Object> chat(String message) {
         Assert.hasText(message, "Assert.hasText: message");
@@ -25,30 +27,30 @@ public class RpcProxy {
         httpHeaders.add("Content-Type", "application/json");
         httpHeaders.add("Authorization", "Bearer sk-hnikuntmbihjuxgdrimxxrfkjzdrfohnaoftxtegcojcupwe");
 
-        SfChatRequestDto body = new SfChatRequestDto();
-        body.setModel(ModelEnum.QWEN_QWEN3_235B_A22B.getName()); // 使用枚举值
-        body.setStream(false);
-        body.setMax_tokens(512);
-        body.setEnable_thinking(true);
-        body.setThinking_budget(4096);
-        body.setMin_p(0.05);
-        body.setStop(null);
-        body.setTemperature(0.7);
-        body.setTop_p(0.7);
-        body.setTop_k(50);
-        body.setFrequencyPenalty(0.5);
-        body.setN(1);
+        SfChatRequestDto requestBody = new SfChatRequestDto();
+        requestBody.setModel(ModelEnum.QWEN_QWEN3_235B_A22B.getName()); // 使用枚举值
+        requestBody.setStream(false);
+        requestBody.setMax_tokens(512);
+        requestBody.setEnable_thinking(true);
+        requestBody.setThinking_budget(4096);
+        requestBody.setMin_p(0.05);
+        requestBody.setStop(null);
+        requestBody.setTemperature(0.7);
+        requestBody.setTop_p(0.7);
+        requestBody.setTop_k(50);
+        requestBody.setFrequencyPenalty(0.5);
+        requestBody.setN(1);
         SfChatResponseFormatDto sfChatResponseFormatDto = new SfChatResponseFormatDto();
         sfChatResponseFormatDto.setType("text");
-        body.setResponse_format(sfChatResponseFormatDto);
+        requestBody.setResponse_format(sfChatResponseFormatDto);
         // 构造消息列表
         SfChatInMessageDto sfChatInMessageDto = new SfChatInMessageDto();
         sfChatInMessageDto.setRole("user");
         sfChatInMessageDto.setContent(message);
-        body.setMessages(Arrays.asList(sfChatInMessageDto));
+        requestBody.setMessages(Arrays.asList(sfChatInMessageDto));
 
         RpcResult<Object> result = new RpcResult<>();
-        try (Response response = siliconFlowFeignClient.chat(body, httpHeaders)) {
+        try (Response response = siliconFlowFeignClient.chat(requestBody, httpHeaders)) {
             String responseBody = new String(response.body().asInputStream().readAllBytes(), StandardCharsets.UTF_8);
             if (200 == response.status()) {
                 SfChatResponseDto sfChatResponseDto = JacksonHelper.toObj(responseBody, SfChatResponseDto.class, false);
@@ -78,6 +80,57 @@ public class RpcProxy {
 
             result.setCode(-1);
             result.setMessage(e.getMessage());
+        }
+
+        return result;
+    }
+
+    public RpcResult<Object> streamChat(String message) {
+        Assert.hasText(message, "Assert.hasText: message");
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type", "application/json");
+        httpHeaders.add("Authorization", "Bearer sk-hnikuntmbihjuxgdrimxxrfkjzdrfohnaoftxtegcojcupwe");
+
+        SfChatRequestDto requestBody = new SfChatRequestDto();
+        requestBody.setModel(ModelEnum.QWEN_QWEN3_235B_A22B.getName()); // 使用枚举值
+        requestBody.setStream(true);
+        requestBody.setMax_tokens(512);
+        requestBody.setEnable_thinking(true);
+        requestBody.setThinking_budget(4096);
+        requestBody.setMin_p(0.05);
+        requestBody.setStop(null);
+        requestBody.setTemperature(0.7);
+        requestBody.setTop_p(0.7);
+        requestBody.setTop_k(50);
+        requestBody.setFrequencyPenalty(0.5);
+        requestBody.setN(1);
+        SfChatResponseFormatDto sfChatResponseFormatDto = new SfChatResponseFormatDto();
+        sfChatResponseFormatDto.setType("text");
+        requestBody.setResponse_format(sfChatResponseFormatDto);
+        // 构造消息列表
+        SfChatInMessageDto sfChatInMessageDto = new SfChatInMessageDto();
+        sfChatInMessageDto.setRole("user");
+        sfChatInMessageDto.setContent(message);
+        requestBody.setMessages(Arrays.asList(sfChatInMessageDto));
+
+        RpcResult<Object> result = new RpcResult<>();
+
+        siliconFlowStreamFeignClient.streamChat(requestBody, httpHeaders)
+                .doOnNext(chunk -> {
+                    // 实时处理每个数据块
+                    System.out.println("收到数据块: " + chunk);
+                    // 可在此处实现：JSON解析、数据拼接、业务逻辑触发等
+                })
+                .doOnError(throwable ->
+                        System.err.println("流式请求异常: " + throwable.getMessage()))
+                .doOnComplete(() ->
+                        System.out.println("流式响应接收完成"))
+                .subscribe();
+
+        try {
+            Thread.sleep(5 * 60 * 1000);
+        } catch (InterruptedException ignore) {
         }
 
         return result;

@@ -45,7 +45,9 @@ public class BasicController {
     @GetMapping("/chat")
     @ResponseBody
     public RpcResult<Object> chat(@RequestParam(name = "message", defaultValue = "现在是什么世纪？") String message) {
-        return rpcProxy.chat(message);
+        // return rpcProxy.chat(message);
+
+        return rpcProxy.streamChat(message);
     }
 
     // http://127.0.0.1:8081/html
