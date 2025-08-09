@@ -20,7 +20,10 @@ import com.rz.web.demo.chat.dto.RpcResult;
 import com.rz.web.demo.chat.rpc.RpcProxy;
 import com.rz.web.demo.chat.rpc.ServerFeignClient;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 
 /**
@@ -32,6 +35,8 @@ public class BasicController {
     private ServerFeignClient serverFeignClient;
     @Resource
     private RpcProxy rpcProxy;
+    @Resource
+    private ChatClient chatClient;
 
     // http://127.0.0.1:8081/hello?name=lisi
     @GetMapping("/hello")
@@ -48,6 +53,13 @@ public class BasicController {
         // return rpcProxy.chat(message);
 
         return rpcProxy.streamChat(message);
+    }
+
+    @GetMapping("/stream/chat")
+    public Flux<String> streamChat(@RequestParam(value = "message", defaultValue = "你好，很高兴认识你，能简单介绍一下自己吗？") String query,
+                                   HttpServletResponse response) {
+        response.setCharacterEncoding("UTF-8");
+        return chatClient.prompt(query).stream().content();
     }
 
     // http://127.0.0.1:8081/html
