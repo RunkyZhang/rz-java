@@ -8,6 +8,7 @@ import reactivefeign.spring.config.EnableReactiveFeignClients;
 /**
  * Hello world!
  */
+// 启动参数加：-Dspring.config.location=classpath:/application.yml
 @EnableFeignClients(basePackages = {"com.rz.web.demo.chat"})
 @EnableReactiveFeignClients(basePackages = {"com.rz.web.demo.chat"})
 @SpringBootApplication

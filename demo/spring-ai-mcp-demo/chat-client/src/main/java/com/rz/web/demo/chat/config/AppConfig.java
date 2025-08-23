@@ -1,13 +1,19 @@
 package com.rz.web.demo.chat.config;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import feign.Request;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class BeanConfig {
+public class AppConfig {
+    @Bean
+    public Request.Options options() {
+        return new Request.Options(5000, 300000);
+    }
+
     @Bean
     public ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
         ChatClient dashScopeChatClient = chatClientBuilder

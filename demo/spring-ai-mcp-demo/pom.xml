@@ -86,6 +86,13 @@
                 <version>${mcp.version}</version>
             </dependency>
 
+            <!-- Spring webflux for SSE transport -->
+            <dependency>
+                <groupId>io.modelcontextprotocol.sdk</groupId>
+                <artifactId>mcp-spring-webflux</artifactId>
+                <version>${mcp.version}</version>
+            </dependency>
+
             <!-- Reactive Feign 响应式feign -->
             <dependency>
                 <groupId>com.playtika.reactivefeign</groupId>
