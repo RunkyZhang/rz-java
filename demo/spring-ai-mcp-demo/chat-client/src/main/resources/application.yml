@@ -8,6 +8,7 @@ spring:
   application:
     name: chat-app
   ai:
+    # com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeChatAutoConfiguration
     dashscope:
       api-key: sk-e5f93a0caa364d548214a24101642a64
       chat:
@@ -19,7 +20,8 @@ spring:
         name: my-mcp-client
         version: 1.0.0
         request-timeout: 60s
-        type: ASYNC  # or ASYNC for reactive applications
+        # or ASYNC for reactive applications
+        type: ASYNC
         sse:
           connections:
             # ??
