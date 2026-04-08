@@ -17,11 +17,16 @@
 package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.rpc.RpcProxy;
+import dev.langchain4j.Experimental;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.internal.Utils;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,24 +36,28 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
+@Slf4j
 @Controller
 public class BasicController {
     @Resource
     private RpcProxy rpcProxy;
     @Resource
-    private OpenAiChatModel model;
+    private OpenAiChatModel openAiChatModel;
+    @Resource
+    private StreamingChatModel streamingChatModel;
 
     // http://127.0.0.1:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
-
         String answer = "";
-        answer = getAnswerByMessages();
+        answer = getAnswerByStream();
+        // answer = getAnswerByMessages();
         // answer = getAnswerByImage();
         // answer = getAnswerByImageBase64();
         // answer = model.chat(value);
@@ -94,7 +103,7 @@ public class BasicController {
                 TextContent.from("看看这个图片内容是什么"),
                 ImageContent.from("https://c-ssl.duitang.com/uploads/item/202003/21/20200321005919_jfuql.jpg")
         );
-        ChatResponse response = model.chat(userMessage);
+        ChatResponse response = openAiChatModel.chat(userMessage);
         return response.aiMessage().text();
     }
 
@@ -107,7 +116,7 @@ public class BasicController {
                 TextContent.from("看看这个图片内容是什么"),
                 imageContent
         );
-        ChatResponse response = model.chat(userMessage);
+        ChatResponse response = openAiChatModel.chat(userMessage);
         return response.aiMessage().text();
     }
 
@@ -133,7 +142,6 @@ public class BasicController {
     //  "stream" : false
     //}
     private String getAnswerByMessages() {
-
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(UserMessage.from("你好，我是王二麻子。"));
         messages.add(AiMessage.from("你好，王二麻子。我是大模型我有什么可以帮助你？"));
@@ -141,7 +149,53 @@ public class BasicController {
         messages.add(AiMessage.from("是的，我是你的咖啡专家。你可以提出咖啡相关问题。"));
         messages.add(UserMessage.from("我现在在鞍山我适合喝什么咖啡？"));
 
-        ChatResponse response = model.chat(messages);
+        ChatResponse response = openAiChatModel.chat(messages);
         return response.aiMessage().text();
+    }
+
+    // 聊天流式返回
+    // {
+    //  "model" : "qwen3.5-plus",
+    //  "messages" : [ {
+    //    "role" : "user",
+    //    "content" : "现在你是一个咖啡专家，请回答我的问题。"
+    //  } ],
+    //  "stream" : true,
+    //  "stream_options" : {
+    //    "include_usage" : true
+    //  }
+    //}
+    private String getAnswerByStream() {
+        CompletableFuture<String> completableFuture = new CompletableFuture<>();
+        streamingChatModel.chat(
+                List.of(UserMessage.from("现在你是一个咖啡专家，请回答我的问题。")),
+                new StreamingChatResponseHandler() {
+                    @Override
+                    @Experimental
+                    public void onPartialThinking(PartialThinking partialThinking) {
+                        log.info("partialThinking: {}", partialThinking.text());
+                    }
+
+                    @Override
+                    public void onPartialResponse(String partialResponse) {
+                        log.info("partialResponse: {}", partialResponse);
+                    }
+
+                    @Override
+                    public void onCompleteResponse(ChatResponse completeResponse) {
+                        completableFuture.complete(completeResponse.aiMessage().text());
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        log.error("error: {}", error);
+                    }
+                });
+
+        try {
+            return completableFuture.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
