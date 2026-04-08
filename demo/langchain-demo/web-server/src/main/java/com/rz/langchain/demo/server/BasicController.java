@@ -16,17 +16,14 @@
 
 package com.rz.langchain.demo.server;
 
-import com.rz.langchain.demo.server.dto.WcImSendRequestDto;
-import com.rz.langchain.demo.server.dto.WcImSendTextContentDto;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import java.util.Collections;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
@@ -35,22 +32,25 @@ import java.util.Collections;
 public class BasicController {
     @Resource
     private RpcProxy rpcProxy;
+    @Resource
+    private OpenAiChatModel model;
 
-    // http://127.0.0.1:8080/hello?name=lisi
+    // http://127.0.0.1:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
-    public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+    public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
+        String answer = model.chat(value);
 
-        WcImSendRequestDto wcImSendRequestDto = new WcImSendRequestDto();
-        wcImSendRequestDto.setRobotKey("02ed44a0-025f-4821-a10e-31d975e30c44");
-        wcImSendRequestDto.setMsgtype("text");
-        WcImSendTextContentDto wcImSendTextContentDto = new WcImSendTextContentDto();
-        wcImSendTextContentDto.setContent("message");
-        wcImSendTextContentDto.setMentioned_list(Collections.singletonList("00545579"));
-        wcImSendRequestDto.setText(wcImSendTextContentDto);
-        rpcProxy.wcImWebhookSend(wcImSendRequestDto);
+//        WcImSendRequestDto wcImSendRequestDto = new WcImSendRequestDto();
+//        wcImSendRequestDto.setRobotKey("02ed44a0-025f-4821-a10e-31d975e30c44");
+//        wcImSendRequestDto.setMsgtype("text");
+//        WcImSendTextContentDto wcImSendTextContentDto = new WcImSendTextContentDto();
+//        wcImSendTextContentDto.setContent("message");
+//        wcImSendTextContentDto.setMentioned_list(Collections.singletonList("00545579"));
+//        wcImSendRequestDto.setText(wcImSendTextContentDto);
+//        rpcProxy.wcImWebhookSend(wcImSendRequestDto);
 
-        return "Server-Hello " + name;
+        return "Server-Hello：" + value + "：" + answer;
     }
 
     // http://127.0.0.1:8080/html

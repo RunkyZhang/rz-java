@@ -6,6 +6,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * Hello world!
+ * https://langchain4j.cn/get-started/
  */
 @SpringBootApplication
 @EnableFeignClients(basePackages = {"com.rz.langchain.demo.server.rpc"})
