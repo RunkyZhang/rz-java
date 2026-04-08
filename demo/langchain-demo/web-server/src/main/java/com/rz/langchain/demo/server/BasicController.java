@@ -17,6 +17,9 @@
 package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.rpc.RpcProxy;
+import dev.langchain4j.data.message.*;
+import dev.langchain4j.internal.Utils;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
@@ -24,6 +27,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
@@ -39,7 +46,12 @@ public class BasicController {
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
-        String answer = model.chat(value);
+
+        String answer = "";
+        answer = getAnswerByMessages();
+        // answer = getAnswerByImage();
+        // answer = getAnswerByImageBase64();
+        // answer = model.chat(value);
 
 //        WcImSendRequestDto wcImSendRequestDto = new WcImSendRequestDto();
 //        wcImSendRequestDto.setRobotKey("02ed44a0-025f-4821-a10e-31d975e30c44");
@@ -57,5 +69,79 @@ public class BasicController {
     @RequestMapping("/html")
     public String html() {
         return "index.html";
+    }
+
+    // 多模态图片识别http body
+    //{
+    //  "model" : "qwen3.5-plus",
+    //  "messages" : [ {
+    //    "role" : "user",
+    //    "content" : [ {
+    //      "type" : "text",
+    //      "text" : "看看这个图片内容是什么"
+    //    }, {
+    //      "type" : "image_url",
+    //      "image_url" : {
+    //        "url" : "https://c-ssl.duitang.com/uploads/item/202003/21/20200321005919_jfuql.jpg",
+    //        "detail" : "low"
+    //      }
+    //    } ]
+    //  } ],
+    //  "stream" : false
+    //}
+    private String getAnswerByImage() {
+        UserMessage userMessage = UserMessage.from(
+                TextContent.from("看看这个图片内容是什么"),
+                ImageContent.from("https://c-ssl.duitang.com/uploads/item/202003/21/20200321005919_jfuql.jpg")
+        );
+        ChatResponse response = model.chat(userMessage);
+        return response.aiMessage().text();
+    }
+
+    // 多模态图片识别。使用base64方式传图片
+    private String getAnswerByImageBase64() {
+        byte[] imageBytes = Utils.readBytes("https://c-ssl.duitang.com/uploads/item/202003/21/20200321005919_jfuql.jpg");
+        String base64Data = Base64.getEncoder().encodeToString(imageBytes);
+        ImageContent imageContent = ImageContent.from(base64Data, "image/jpg");
+        UserMessage userMessage = UserMessage.from(
+                TextContent.from("看看这个图片内容是什么"),
+                imageContent
+        );
+        ChatResponse response = model.chat(userMessage);
+        return response.aiMessage().text();
+    }
+
+    // 多轮对话。给ai更多聊天上下文。后续可以使用聊天记忆功能替代。这只是个demo
+    //{
+    //  "model" : "qwen3.5-plus",
+    //  "messages" : [ {
+    //    "role" : "user",
+    //    "content" : "你好，我是王二麻子。"
+    //  }, {
+    //    "role" : "assistant",
+    //    "content" : "你好，王二麻子。我是大模型我有什么可以帮助你？"
+    //  }, {
+    //    "role" : "user",
+    //    "content" : "你现在是一个咖啡专家。"
+    //  }, {
+    //    "role" : "assistant",
+    //    "content" : "是的，我是你的咖啡专家。你可以提出咖啡相关问题。"
+    //  }, {
+    //    "role" : "user",
+    //    "content" : "我现在在鞍山我适合喝什么咖啡？"
+    //  } ],
+    //  "stream" : false
+    //}
+    private String getAnswerByMessages() {
+
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(UserMessage.from("你好，我是王二麻子。"));
+        messages.add(AiMessage.from("你好，王二麻子。我是大模型我有什么可以帮助你？"));
+        messages.add(UserMessage.from("你现在是一个咖啡专家。"));
+        messages.add(AiMessage.from("是的，我是你的咖啡专家。你可以提出咖啡相关问题。"));
+        messages.add(UserMessage.from("我现在在鞍山我适合喝什么咖啡？"));
+
+        ChatResponse response = model.chat(messages);
+        return response.aiMessage().text();
     }
 }

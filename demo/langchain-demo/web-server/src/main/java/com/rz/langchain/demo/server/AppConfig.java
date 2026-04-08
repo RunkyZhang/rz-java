@@ -11,6 +11,7 @@ public class AppConfig {
     @Value("${ai.model.apiKey}")
     public String apiKey;
 
+    // http debug：SyncRequestExecutor
     @Bean
     public OpenAiChatModel openAiChatModel() {
         return OpenAiChatModel.builder()
