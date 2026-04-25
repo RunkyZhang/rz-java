@@ -17,18 +17,24 @@
 package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.rpc.RpcProxy;
+import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.internal.Utils;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.service.tool.DefaultToolExecutor;
+import dev.langchain4j.service.tool.ToolExecutor;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +43,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -53,13 +60,16 @@ public class BasicController {
     private StreamingChatModel streamingChatModel;
     @Resource
     private ChatMemory chatMemory;
+    @Resource
+    private ToolsSelector toolsSelector;
 
     // http://127.0.0.1:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
         String answer = "";
-        answer = getAnswerWithMemory(value);
+        answer = getAnswerWithTools(value);
+        // answer = getAnswerWithMemory(value);
         // answer = getAnswerByStream();
         // answer = getAnswerByMessages();
         // answer = getAnswerByImage();
@@ -67,16 +77,7 @@ public class BasicController {
         // answer = getAnswerByMessage(value);
         // answer = getAnswer(value);
 
-//        WcImSendRequestDto wcImSendRequestDto = new WcImSendRequestDto();
-//        wcImSendRequestDto.setRobotKey("02ed44a0-025f-4821-a10e-31d975e30c44");
-//        wcImSendRequestDto.setMsgtype("text");
-//        WcImSendTextContentDto wcImSendTextContentDto = new WcImSendTextContentDto();
-//        wcImSendTextContentDto.setContent("message");
-//        wcImSendTextContentDto.setMentioned_list(Collections.singletonList("00545579"));
-//        wcImSendRequestDto.setText(wcImSendTextContentDto);
-//        rpcProxy.wcImWebhookSend(wcImSendRequestDto);
-
-        return "Server-Hello：" + value + "：" + answer;
+        return answer;
     }
 
     private String getAnswer(String value) {
@@ -175,7 +176,7 @@ public class BasicController {
     //  }
     //}
     private String getAnswerByStream() {
-        CompletableFuture<String> completableFuture = new CompletableFuture<>();
+        CompletableFuture<ChatResponse> completableFuture = new CompletableFuture<>();
         streamingChatModel.chat(
                 List.of(UserMessage.from("现在你是一个咖啡专家，请回答我的问题。")),
                 new StreamingChatResponseHandler() {
@@ -192,7 +193,7 @@ public class BasicController {
 
                     @Override
                     public void onCompleteResponse(ChatResponse completeResponse) {
-                        completableFuture.complete(completeResponse.aiMessage().text());
+                        completableFuture.complete(completeResponse);
                     }
 
                     @Override
@@ -202,7 +203,7 @@ public class BasicController {
                 });
 
         try {
-            return completableFuture.get();
+            return completableFuture.get().aiMessage().text();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -210,13 +211,45 @@ public class BasicController {
 
     private String getAnswerWithMemory(String message) {
         List<ChatMessage> allChatMessages = chatMemory.messages();
-        allChatMessages.addAll( chatMemory.messages());
+        allChatMessages.addAll(chatMemory.messages());
         ChatMessage userMessage = UserMessage.from(message);
         allChatMessages.add(userMessage);
         AiMessage aiMessage = openAiChatModel.chat(allChatMessages).aiMessage();
         chatMemory.add(userMessage, aiMessage);
 
         return aiMessage.text();
+    }
+
+    private String getAnswerWithTools(String message) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        ChatMessage userMessage = UserMessage.from(message);
+        chatMessages.add(userMessage);
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(userMessage)
+                .toolSpecifications(toolsSelector.getToolSpecifications())
+                .build();
+        ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
+        AiMessage aiMessage = chatResponse.aiMessage();
+        chatMessages.add(aiMessage);
+        if (CollectionUtils.isEmpty(aiMessage.toolExecutionRequests())) {
+            return aiMessage.text();
+        }
+
+        for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
+            Object tools = toolsSelector.getTool(toolExecutionRequest.name());
+            if (null == tools) {
+                continue;
+            }
+            ToolExecutor toolExecutor = new DefaultToolExecutor(tools, toolExecutionRequest);
+            String executorResult = toolExecutor.execute(toolExecutionRequest, UUID.randomUUID().toString());
+            ToolExecutionResultMessage toolExecutionResultMessages =
+                    ToolExecutionResultMessage.from(toolExecutionRequest, executorResult);
+
+            chatMessages.add(toolExecutionResultMessages);
+        }
+
+        chatResponse = openAiChatModel.chat(chatMessages);
+        return chatResponse.aiMessage().text();
     }
 
 

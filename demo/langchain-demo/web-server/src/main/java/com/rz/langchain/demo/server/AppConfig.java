@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 @Configuration
 public class AppConfig {
 
@@ -24,6 +26,7 @@ public class AppConfig {
                 .apiKey(apiKey)
                 .modelName("qwen3.5-plus")
                 .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -36,6 +39,7 @@ public class AppConfig {
                 .apiKey(apiKey)
                 .modelName("qwen3.5-plus")
                 .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
                 .logRequests(true)
                 .logResponses(true)
                 .build();
