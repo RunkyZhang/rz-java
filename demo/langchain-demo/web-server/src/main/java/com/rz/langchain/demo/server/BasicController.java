@@ -16,6 +16,7 @@
 
 package com.rz.langchain.demo.server;
 
+import com.rz.langchain.demo.server.dto.ChatMessagesDto;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
@@ -34,11 +35,9 @@ import dev.langchain4j.service.tool.ToolExecutor;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -78,6 +77,66 @@ public class BasicController {
         // answer = getAnswer(value);
 
         return answer;
+    }
+
+    @PostMapping("/chat")
+    public String chat(@RequestBody ChatMessagesDto requestDto) {
+        Assert.notNull(requestDto, "Assert.notNull: requestDto");
+        Assert.hasText(requestDto.getMessage(), "Assert.hasText: requestDto.getMessage()");
+
+        // 获取历史会话
+        List<ChatMessage> chatMessages = chatMemory.messages();
+        chatMessages.addAll(chatMemory.messages());
+
+        // 创建用户消息
+        List<Content> contents = new ArrayList<>();
+        Content textContent = TextContent.from(requestDto.getMessage());
+        contents.add(textContent);
+        if (!CollectionUtils.isEmpty(requestDto.getImageBase64s())) {
+            for (String imageBase64 : requestDto.getImageBase64s()) {
+                ImageContent imageContent = ImageContent.from(imageBase64, "image/jpg");
+                contents.add(imageContent);
+            }
+        }
+        ChatMessage userMessage = UserMessage.from(contents);
+        chatMessages.add(userMessage);
+        // 存储
+        chatMemory.add(userMessage);
+
+        // 调用模型
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(chatMessages)
+                .toolSpecifications(toolsSelector.getToolSpecifications())
+                .build();
+        ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
+        AiMessage aiMessage = chatResponse.aiMessage();
+        chatMessages.add(aiMessage);
+        // 存储
+        chatMemory.add(aiMessage);
+
+        if (CollectionUtils.isEmpty(aiMessage.toolExecutionRequests())) {
+            return aiMessage.text();
+        }
+
+        for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
+            Object tools = toolsSelector.getTool(toolExecutionRequest.name());
+            if (null == tools) {
+                continue;
+            }
+            ToolExecutor toolExecutor = new DefaultToolExecutor(tools, toolExecutionRequest);
+            String executorResult = toolExecutor.execute(toolExecutionRequest, UUID.randomUUID().toString());
+            ToolExecutionResultMessage toolExecutionResultMessages =
+                    ToolExecutionResultMessage.from(toolExecutionRequest, executorResult);
+            chatMessages.add(toolExecutionResultMessages);
+            // 存储
+            chatMemory.add(toolExecutionResultMessages);
+        }
+
+        chatResponse = openAiChatModel.chat(chatMessages);
+        aiMessage = chatResponse.aiMessage();
+        // 存储
+        chatMemory.add(aiMessage);
+        return aiMessage.text();
     }
 
     private String getAnswer(String value) {
