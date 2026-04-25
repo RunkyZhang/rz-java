@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>AI 智能对话</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
@@ -19,31 +22,43 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+        }
+
+        .app-layout {
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            display: flex;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: white;
+        }
+
+        .sidebar {
+            width: 15%;
+            min-width: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px 20px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .sidebar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.4;
         }
 
         .chat-container {
-            width: 90%;
-            max-width: 800px;
-            height: 90vh;
+            width: 85%;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-header h1 {
-            font-size: 24px;
-            font-weight: 600;
         }
 
         .chat-messages {
@@ -79,11 +94,12 @@
         }
 
         .message-content {
-            max-width: 70%;
-            padding: 12px 18px;
+            max-width: 85%;
+            padding: 16px 22px;
             border-radius: 18px;
             word-wrap: break-word;
-            line-height: 1.6;
+            line-height: 1.8;
+            font-size: 16px;
         }
 
         .message.user .message-content {
@@ -109,62 +125,70 @@
             font-weight: 600;
         }
 
-        .message.ai .message-content h1 { font-size: 1.5em; }
-        .message.ai .message-content h2 { font-size: 1.3em; }
-        .message.ai .message-content h3 { font-size: 1.1em; }
+        .message.ai .message-content h1 { font-size: 1.8em; }
+        .message.ai .message-content h2 { font-size: 1.6em; }
+        .message.ai .message-content h3 { font-size: 1.4em; }
+        .message.ai .message-content h4 { font-size: 1.2em; }
+        .message.ai .message-content h5 { font-size: 1.1em; }
+        .message.ai .message-content h6 { font-size: 1em; }
 
         .message.ai .message-content p {
-            margin: 8px 0;
+            margin: 10px 0;
+            font-size: 16px;
         }
 
         .message.ai .message-content code {
             background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 3px;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            font-size: 14px;
         }
 
         .message.ai .message-content pre {
             background: #f4f4f4;
-            padding: 12px;
-            border-radius: 6px;
+            padding: 15px;
+            border-radius: 8px;
             overflow-x: auto;
-            margin: 10px 0;
+            margin: 12px 0;
         }
 
         .message.ai .message-content pre code {
             background: none;
             padding: 0;
+            font-size: 14px;
         }
 
         .message.ai .message-content ul,
         .message.ai .message-content ol {
-            margin: 8px 0;
-            padding-left: 20px;
+            margin: 10px 0;
+            padding-left: 25px;
         }
 
         .message.ai .message-content li {
-            margin: 4px 0;
+            margin: 6px 0;
+            font-size: 16px;
         }
 
         .message.ai .message-content blockquote {
-            border-left: 3px solid #667eea;
-            padding-left: 12px;
-            margin: 8px 0;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            margin: 10px 0;
             color: #666;
+            font-size: 15px;
         }
 
         .message.ai .message-content table {
             border-collapse: collapse;
             width: 100%;
-            margin: 10px 0;
+            margin: 12px 0;
+            font-size: 15px;
         }
 
         .message.ai .message-content th,
         .message.ai .message-content td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px 12px;
             text-align: left;
         }
 
@@ -188,6 +212,7 @@
             border-top: 1px solid #e0e0e0;
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .chat-input {
@@ -242,12 +267,8 @@
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .welcome-message {
@@ -257,38 +278,55 @@
         }
 
         .welcome-message h2 {
-            font-size: 20px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 12px;
             color: #667eea;
         }
 
         .welcome-message p {
-            font-size: 14px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .app-layout {
+                flex-direction: column;
+            }
+
+            .sidebar,
+            .chat-container {
+                width: 100%;
+            }
+
+            .sidebar {
+                min-width: unset;
+            }
         }
     </style>
 </head>
 <body>
-<div class="chat-container">
-    <div class="chat-header">
+<div class="app-layout">
+    <aside class="sidebar">
         <h1>🤖 AI 智能助手</h1>
-    </div>
+    </aside>
 
-    <div class="chat-messages" id="chatMessages">
-        <div class="welcome-message">
-            <h2>欢迎使用 AI 对话</h2>
-            <p>开始与我聊天吧！我可以回答你的各种问题。</p>
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h2>欢迎使用 AI 对话</h2>
+                <p>开始与我聊天吧！我可以回答你的各种问题。</p>
+            </div>
         </div>
-    </div>
 
-    <div class="chat-input-container">
-        <input
-                type="text"
-                class="chat-input"
-                id="chatInput"
-                placeholder="输入你的问题..."
-                onkeypress="handleKeyPress(event)"
-        >
-        <button class="send-button" id="sendButton" onclick="sendMessage()">发送</button>
+        <div class="chat-input-container">
+            <input
+                    type="text"
+                    class="chat-input"
+                    id="chatInput"
+                    placeholder="输入你的问题..."
+                    onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-button" id="sendButton" onclick="sendMessage()">发送</button>
+        </div>
     </div>
 </div>
 
@@ -309,7 +347,7 @@
 
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
-        
+
         if (isUser) {
             messageContent.textContent = content;
         } else {
