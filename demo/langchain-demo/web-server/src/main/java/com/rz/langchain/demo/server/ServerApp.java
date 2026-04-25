@@ -7,6 +7,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 /**
  * Hello world!
  * https://langchain4j.cn/get-started/
+ * RequestExecutor.executeRaw -> DefaultOpenAiClient.completion -> SyncRequestExecutor.execute -> LoggingHttpClient.execute
  */
 @SpringBootApplication
 @EnableFeignClients(basePackages = {"com.rz.langchain.demo.server.rpc"})

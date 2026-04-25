@@ -1,8 +1,11 @@
 package com.rz.langchain.demo.server;
 
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +23,9 @@ public class AppConfig {
                 .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
                 .apiKey(apiKey)
                 .modelName("qwen3.5-plus")
+                .returnThinking(true)
+                .logRequests(true)
+                .logResponses(true)
                 .build();
     }
 
@@ -29,6 +35,21 @@ public class AppConfig {
                 .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
                 .apiKey(apiKey)
                 .modelName("qwen3.5-plus")
+                .returnThinking(true)
+                .logRequests(true)
+                .logResponses(true)
                 .build();
     }
+
+    @Bean
+    public ChatMemory ChatMemory() {
+        // memoryId: 一般被设计为sessionId
+        return MessageWindowChatMemory.builder()
+                .id(1111)
+                .maxMessages(50)
+                .chatMemoryStore(new InMemoryChatMemoryStore())
+                .build();
+    }
+
+    // strictJsonSchema
 }

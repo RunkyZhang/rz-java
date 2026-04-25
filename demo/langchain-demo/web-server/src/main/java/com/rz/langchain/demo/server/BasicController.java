@@ -20,6 +20,7 @@ import com.rz.langchain.demo.server.rpc.RpcProxy;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.internal.Utils;
+import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.PartialThinking;
@@ -50,17 +51,21 @@ public class BasicController {
     private OpenAiChatModel openAiChatModel;
     @Resource
     private StreamingChatModel streamingChatModel;
+    @Resource
+    private ChatMemory chatMemory;
 
     // http://127.0.0.1:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
         String answer = "";
-        answer = getAnswerByStream();
+        answer = getAnswerWithMemory(value);
+        // answer = getAnswerByStream();
         // answer = getAnswerByMessages();
         // answer = getAnswerByImage();
         // answer = getAnswerByImageBase64();
-        // answer = model.chat(value);
+        // answer = getAnswerByMessage(value);
+        // answer = getAnswer(value);
 
 //        WcImSendRequestDto wcImSendRequestDto = new WcImSendRequestDto();
 //        wcImSendRequestDto.setRobotKey("02ed44a0-025f-4821-a10e-31d975e30c44");
@@ -74,10 +79,14 @@ public class BasicController {
         return "Server-Hello：" + value + "：" + answer;
     }
 
-    // http://127.0.0.1:8080/html
-    @RequestMapping("/html")
-    public String html() {
-        return "index.html";
+    private String getAnswer(String value) {
+        return openAiChatModel.chat(value);
+    }
+
+    private String getAnswerByMessage(String value) {
+        ChatMessage userMessage = UserMessage.from(value);
+        ChatResponse chatResponse = openAiChatModel.chat(userMessage);
+        return chatResponse.aiMessage().text();
     }
 
     // 多模态图片识别http body
@@ -197,5 +206,23 @@ public class BasicController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getAnswerWithMemory(String message) {
+        List<ChatMessage> allChatMessages = chatMemory.messages();
+        allChatMessages.addAll( chatMemory.messages());
+        ChatMessage userMessage = UserMessage.from(message);
+        allChatMessages.add(userMessage);
+        AiMessage aiMessage = openAiChatModel.chat(allChatMessages).aiMessage();
+        chatMemory.add(userMessage, aiMessage);
+
+        return aiMessage.text();
+    }
+
+
+    // http://127.0.0.1:8080/html
+    @RequestMapping("/html")
+    public String html() {
+        return "index.html";
     }
 }
