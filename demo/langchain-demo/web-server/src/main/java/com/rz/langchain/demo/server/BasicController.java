@@ -80,6 +80,7 @@ public class BasicController {
     }
 
     @PostMapping("/chat")
+    @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
         Assert.hasText(requestDto.getMessage(), "Assert.hasText: requestDto.getMessage()");

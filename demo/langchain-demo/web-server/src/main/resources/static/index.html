@@ -391,13 +391,19 @@
         showLoading();
 
         try {
-            const response = await fetch(`/hello?value=${encodeURIComponent(message)}`);
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            });
             const data = await response.text();
 
             hideLoading();
-
-            const answer = data.replace('Server-Hello：' + message + '：', '');
-            addMessage(answer, false);
+            addMessage(data, false);
         } catch (error) {
             hideLoading();
             addMessage('抱歉，发生了错误，请稍后重试。', false);
