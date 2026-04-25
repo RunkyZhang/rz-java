@@ -79,6 +79,8 @@ public class BasicController {
         return answer;
     }
 
+    // 给00545579发一条企业微信消息，内容是【厉害呀】
+    // http://localhost:8080/index.html
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
