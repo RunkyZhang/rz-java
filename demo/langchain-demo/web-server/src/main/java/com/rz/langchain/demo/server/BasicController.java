@@ -18,6 +18,7 @@ package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.dto.ChatMessagesDto;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
+import com.rz.langchain.demo.server.tools.FormatAddressAgent;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -67,7 +68,8 @@ public class BasicController {
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
         String answer = "";
-        answer = getAnswerWithSystemMessage(value);
+        answer = getAnswerWithJson(value);
+        // answer = getAnswerWithSystemMessage(value);
         // answer = getAnswerWithTools(value);
         // answer = getAnswerWithMemory(value);
         // answer = getAnswerByStream();
@@ -330,6 +332,20 @@ public class BasicController {
         return chatResponse.aiMessage().text();
     }
 
+    // 测试prompt：解析以下地址：快递请邮寄到上海市浦东新区陆家嘴环路1000号恒生银行大厦18层，13688889999王五先生收就好了。电话记得要脱敏，如果人没接电话那么就把快递请放前台
+    private String getAnswerWithJson(String message) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        ChatMessage userMessage = UserMessage.from(message);
+        ChatMessage systemMessage = UserMessage.from(FormatAddressAgent.SYSTEM_PROMPT);
+        chatMessages.add(systemMessage);
+        chatMessages.add(userMessage);
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(chatMessages)
+                .build();
+
+        ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
+        return chatResponse.aiMessage().text();
+    }
 
     // http://127.0.0.1:8080/html
     @RequestMapping("/html")

@@ -28,4 +28,13 @@ public class WcImTools {
         wcImSendRequestDto.setText(wcImSendTextContentDto);
         rpcProxy.wcImWebhookSend(wcImSendRequestDto);
     }
+
+    @Tool("通过姓名获取企业微信userId，用于发送企业微信消息时作为传入userId参数使用")
+    public String getUserIdByName(@P("用户姓名") String name) {
+        if ("张仁杰".equals(name) || "仁杰".equals(name)) {
+            return "00545579";
+        }
+
+        return null;
+    }
 }
