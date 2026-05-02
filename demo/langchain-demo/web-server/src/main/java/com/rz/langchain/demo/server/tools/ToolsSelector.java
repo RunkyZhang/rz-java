@@ -19,10 +19,13 @@ public class ToolsSelector {
 
     @Resource
     private WcImTools wcImTools;
+    @Resource
+    private WriteStoryAgent writeStoryAgent;
 
     @PostConstruct
     private void init() {
         putTools(ToolSpecifications.toolSpecificationsFrom(wcImTools), wcImTools);
+        putTools(ToolSpecifications.toolSpecificationsFrom(writeStoryAgent), writeStoryAgent);
     }
 
     public Object getTool(String name) {

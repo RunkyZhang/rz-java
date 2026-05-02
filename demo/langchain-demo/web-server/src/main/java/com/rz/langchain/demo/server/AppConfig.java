@@ -19,12 +19,25 @@ public class AppConfig {
     public String apiKey;
 
     // http debug：SyncRequestExecutor
-    @Bean
-    public OpenAiChatModel openAiChatModel() {
+    @Bean("qwen_3_5_plus")
+    public OpenAiChatModel openAiChatModel_Qwen() {
         return OpenAiChatModel.builder()
                 .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
                 .apiKey(apiKey)
                 .modelName("qwen3.5-plus")
+                .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean("glm_5")
+    public OpenAiChatModel openAiChatModel_Qlm() {
+        return OpenAiChatModel.builder()
+                .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
+                .apiKey(apiKey)
+                .modelName("glm-5")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
                 .logRequests(true)

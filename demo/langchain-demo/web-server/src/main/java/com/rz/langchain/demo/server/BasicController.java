@@ -53,7 +53,7 @@ import java.util.concurrent.CompletableFuture;
 public class BasicController {
     @Resource
     private RpcProxy rpcProxy;
-    @Resource
+    @Resource(name = "qwen_3_5_plus")
     private OpenAiChatModel openAiChatModel;
     @Resource
     private StreamingChatModel streamingChatModel;
@@ -62,12 +62,13 @@ public class BasicController {
     @Resource
     private ToolsSelector toolsSelector;
 
-    // http://127.0.0.1:8080/hello?value=介绍一下你自己
+    // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
         String answer = "";
-        answer = getAnswerWithTools(value);
+        answer = getAnswerWithSystemMessage(value);
+        // answer = getAnswerWithTools(value);
         // answer = getAnswerWithMemory(value);
         // answer = getAnswerByStream();
         // answer = getAnswerByMessages();
@@ -149,6 +150,17 @@ public class BasicController {
     private String getAnswerByMessage(String value) {
         ChatMessage userMessage = UserMessage.from(value);
         ChatResponse chatResponse = openAiChatModel.chat(userMessage);
+        return chatResponse.aiMessage().text();
+    }
+
+    private String getAnswerWithSystemMessage(String value) {
+        List<ChatMessage> messages = new ArrayList<>();
+        ChatMessage systemMessage = SystemMessage.from("你是AI相关知识学的小助手，叫王二麻子。");
+        ChatMessage userMessage = UserMessage.from(value);
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        ChatResponse chatResponse = openAiChatModel.chat(messages);
         return chatResponse.aiMessage().text();
     }
 
