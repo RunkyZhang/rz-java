@@ -77,7 +77,7 @@ public class FormatAddressAgent {
         messages.add(userMessage);
 
         ChatRequest chatRequest = ChatRequest.builder()
-                //.responseFormat(this.responseFormat) // 目前几个模型不生效
+                //.responseFormat(this.responseFormat) // 目前使用的几个模型无法识别该设置（不生效或直接报错）。故注释掉
                 .messages(messages)
                 .build();
 
