@@ -16,9 +16,10 @@ import java.util.List;
 // 创建一个AI作家。把AI Agent包装成一个工具。实现多Agent之间最简单交互
 @Service
 public class WriteStoryAgent {
-    @Resource(name = "glm_5")
+    @Resource(name = "deepSeek_v4_pro")
     private OpenAiChatModel openAiChatModel;
 
+    // 测试prompt：帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情
     @Tool("这是一个AI作家Agent，最擅长的是些短片小故事。可以完成文本相关的创作。例如故事，作文，散文，小说，讲演稿，短文，文章，文档等")
     public String handoffWriteText(@P("用自然语言描述需要生成什么内容，包括主题、风格、长度、关键元素等要求") String prompt) {
         List<ChatMessage> messages = new ArrayList<>();

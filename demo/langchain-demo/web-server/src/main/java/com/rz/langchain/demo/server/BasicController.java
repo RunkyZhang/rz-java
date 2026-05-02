@@ -80,7 +80,8 @@ public class BasicController {
         return answer;
     }
 
-    // 给00545579发一条企业微信消息，内容是【厉害呀】
+    // 测试：给00545579发一条企业微信消息，内容是【厉害呀】
+    // 测试：先帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情。然后把短文内容通过企业微信发给00545579
     // http://localhost:8080/index.html
     @PostMapping("/chat")
     @ResponseBody
@@ -107,40 +108,43 @@ public class BasicController {
         // 存储
         chatMemory.add(userMessage);
 
-        // 调用模型
-        ChatRequest chatRequest = ChatRequest.builder()
-                .messages(chatMessages)
-                .toolSpecifications(toolsSelector.getToolSpecifications())
-                .build();
-        ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
-        AiMessage aiMessage = chatResponse.aiMessage();
-        chatMessages.add(aiMessage);
-        // 存储
-        chatMemory.add(aiMessage);
-
-        if (CollectionUtils.isEmpty(aiMessage.toolExecutionRequests())) {
-            return aiMessage.text();
-        }
-
-        for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
-            Object tools = toolsSelector.getTool(toolExecutionRequest.name());
-            if (null == tools) {
-                continue;
-            }
-            ToolExecutor toolExecutor = new DefaultToolExecutor(tools, toolExecutionRequest);
-            String executorResult = toolExecutor.execute(toolExecutionRequest, UUID.randomUUID().toString());
-            ToolExecutionResultMessage toolExecutionResultMessages =
-                    ToolExecutionResultMessage.from(toolExecutionRequest, executorResult);
-            chatMessages.add(toolExecutionResultMessages);
+        int times = 0;
+        while (true) {
+            // 调用模型
+            ChatRequest chatRequest = ChatRequest.builder()
+                    .messages(chatMessages)
+                    .toolSpecifications(toolsSelector.getToolSpecifications())
+                    .build();
+            ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
+            AiMessage aiMessage = chatResponse.aiMessage();
+            chatMessages.add(aiMessage);
             // 存储
-            chatMemory.add(toolExecutionResultMessages);
-        }
+            chatMemory.add(aiMessage);
 
-        chatResponse = openAiChatModel.chat(chatMessages);
-        aiMessage = chatResponse.aiMessage();
-        // 存储
-        chatMemory.add(aiMessage);
-        return aiMessage.text();
+            if (CollectionUtils.isEmpty(aiMessage.toolExecutionRequests())) {
+                return aiMessage.text();
+            }
+
+            // 限制和LLM交互次数
+            times++;
+            if (10 < times) {
+                return "超过和LLM交互的最大次数。请重试！";
+            }
+
+            for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
+                Object tools = toolsSelector.getTool(toolExecutionRequest.name());
+                if (null == tools) {
+                    continue;
+                }
+                ToolExecutor toolExecutor = new DefaultToolExecutor(tools, toolExecutionRequest);
+                String executorResult = toolExecutor.execute(toolExecutionRequest, UUID.randomUUID().toString());
+                ToolExecutionResultMessage toolExecutionResultMessages =
+                        ToolExecutionResultMessage.from(toolExecutionRequest, executorResult);
+                chatMessages.add(toolExecutionResultMessages);
+                // 存储
+                chatMemory.add(toolExecutionResultMessages);
+            }
+        }
     }
 
     private String getAnswer(String value) {
