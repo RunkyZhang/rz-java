@@ -1,17 +1,27 @@
 package com.rz.langchain.demo.server;
 
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.DocumentSplitter;
+import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
+import dev.langchain4j.data.document.splitter.DocumentSplitters;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15QuantizedEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 public class AppConfig {
@@ -106,5 +116,43 @@ public class AppConfig {
                 .build();
     }
 
-    // strictJsonSchema
+    @Bean
+    public EmbeddingStoreIngestor embeddingStoreIngestor(EmbeddingStore<TextSegment> embeddingStore) {
+        // TokenCountEstimator：token用量估算器
+        // recursive 方法实际上是一个高层封装，它将 DocumentByParagraphSplitter、DocumentByLineSplitter、DocumentBySentenceSplitter、DocumentByWordSplitter、DocumentByCharacterSplitter 串联成一个责任链，并自动配置好各自的 subSplitter。开发者无需手动构建分层结构，直接调用此方法即可获得最佳实践的分割器。
+        // DocumentSplitters.recursive(...)
+        // 按段落边界分割文档，保持段落的完整性。适用场景：适合结构化较好的文档，如文章、报告等。
+        // DocumentByParagraphSplitter();
+        // 按换行符分割文档，每行作为一个单元。。适用场景：适合代码文件、CSV 文件、日志文件等按行组织的内容。
+        // DocumentByLineSplitter();
+        // 按句子边界（句号、问号、感叹号等）分割文档。适用场景：需要保持句子完整性的场景，如问答系统、语义搜索。
+        // DocumentBySentenceSplitter;
+        // 按单词边界分割文档。适用场景：需要精细控制片段大小的场景，但可能破坏语义完整性。
+        // DocumentByWordSplitter;
+        // 最简单的分割方式，直接按字符数切割。适用场景：简单快速的分割，但可能在单词或句子中间切断
+        // DocumentByCharacterSplitter;
+        // 使用自定义正则表达式作为分隔符进行分割。适用场景：需要自定义分割规则的場景，如按章节、按特定标记分割。举例："(?m)^#\\s+"是按 Markdown 一级标题分割
+        // DocumentByRegexSplitter;
+
+        // TODO，注意：貌似maxOverlapSizeInChars不生效。下面是验证代码
+//        String longString = "a".repeat(100);
+//        longString += "b".repeat(100);
+//        Document doc = Document.from(longString);
+//        DocumentSplitter splitter = DocumentSplitters.recursive(100, 50);
+//        List<TextSegment> segments = splitter.split(doc);
+//        for(TextSegment seg : segments) {
+//            System.out.println(seg.text().length() + " : " + seg.text().substring(0, Math.min(20, seg.text().length())));
+//        }
+
+        return EmbeddingStoreIngestor.builder()
+                .documentSplitter(DocumentSplitters.recursive(500, 100))
+                .embeddingModel(new BgeSmallZhV15QuantizedEmbeddingModel())
+                .embeddingStore(embeddingStore)
+                .build();
+    }
+
+    @Bean
+    public EmbeddingStore<TextSegment> embeddingStore() {
+        return new InMemoryEmbeddingStore<>();
+    }
 }

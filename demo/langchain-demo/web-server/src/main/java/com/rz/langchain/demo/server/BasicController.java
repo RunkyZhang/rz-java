@@ -17,12 +17,21 @@
 package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.dto.ChatMessagesDto;
+import com.rz.langchain.demo.server.dto.TextSegmentDto;
+import com.rz.langchain.demo.server.dto.TextSegmentsDto;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.FormatAddressAgent;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
+import dev.langchain4j.data.document.loader.UrlDocumentLoader;
+import dev.langchain4j.data.document.parser.TextDocumentParser;
+import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
+import dev.langchain4j.data.document.transformer.jsoup.HtmlToTextDocumentTransformer;
 import dev.langchain4j.data.message.*;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.internal.Utils;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -33,6 +42,9 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -62,6 +74,10 @@ public class BasicController {
     private ChatMemory chatMemory;
     @Resource
     private ToolsSelector toolsSelector;
+    @Resource
+    private EmbeddingStoreIngestor embeddingStoreIngestor;
+    @Resource
+    private EmbeddingStore<TextSegment> embeddingStore;
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
@@ -345,6 +361,35 @@ public class BasicController {
 
         ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
         return chatResponse.aiMessage().text();
+    }
+
+    @GetMapping("/ingest")
+    @ResponseBody
+    public List<TextSegmentDto> ingest() {
+        // ApachePoiDocumentParser for office
+        // ApacheTikaDocumentParser for default
+        Document txtDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/最远的距离.txt", new TextDocumentParser());
+        txtDocument.metadata().put("document_id", UUID.randomUUID().toString());
+        Document pdfDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/短篇小说写作指南.pdf", new ApachePdfBoxDocumentParser());
+        pdfDocument.metadata().put("document_id", UUID.randomUUID().toString());
+        Document urlDocument = UrlDocumentLoader.load("https://news.qq.com/rain/a/20260209A03PA600", new TextDocumentParser());
+        HtmlToTextDocumentTransformer htmlToTextDocumentTransformer = new HtmlToTextDocumentTransformer();
+        // 把html中的内容转换成纯文本
+        Document webDocument = htmlToTextDocumentTransformer.transform(urlDocument);
+        webDocument.metadata().put("document_id", UUID.randomUUID().toString());
+        webDocument.metadata().put("title", "3年、1万人，快手技术团队首次系统披露AI研发范式升级历程");
+        webDocument.metadata().put("core", "AI编程尝试");
+
+        List<Document> documents = new ArrayList<>();
+        documents.add(txtDocument);
+        documents.add(pdfDocument);
+        documents.add(webDocument);
+        embeddingStoreIngestor.ingest(documents);
+
+        String entriesJson = ((InMemoryEmbeddingStore<TextSegment>) embeddingStore).serializeToJson();
+        TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
+
+        return null == textSegmentsDto ? null : textSegmentsDto.getEntries();
     }
 
     // http://127.0.0.1:8080/html
