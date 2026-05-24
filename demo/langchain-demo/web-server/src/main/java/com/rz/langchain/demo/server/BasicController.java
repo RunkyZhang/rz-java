@@ -129,20 +129,22 @@ public class BasicController {
             }
         }
         // Rag搜索结果
-        if (!CollectionUtils.isEmpty(memoryDocuments) && !StringUtils.isBlank(requestDto.getRagName())) {
-            List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), requestDto.getRagName(), "all");
-            String ragText = "这是知识库查询结果的json数据：\n";
-            ragText += "========以下是json数据类型描述========\n";
-            ragText += "EmbeddingMatchDto对象数组，每个对象包含以下字段：\n";
-            ragText += "- score (Double): 相似度分数，范围0-1，越接近1表示匹配度越高\n";
-            ragText += "- embeddingId (String): 向量ID，唯一标识符\n";
-            ragText += "- text (String): 匹配的文本内容片段\n";
-            ragText += "- metadata (EmbeddedMetadataDto): 元数据对象，包含以下字段：\n";
-            ragText += "  - metadata (Map<String, Object>): 元数据键值对，包含document_id(文档ID)、name(名称)、type(内容类型)、url(网页地址)、本地路径(本地文件路径)等\n";
-            ragText += "========以下是json数据========\n";
-            ragText += JacksonHelper.toJson(embeddingMatchDtos, false);
-            Content ragContent = TextContent.from(ragText);
-            contents.add(ragContent);
+        if (!CollectionUtils.isEmpty(memoryDocuments) && !StringUtils.isBlank(requestDto.getDocumentName())) {
+            List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), "all", requestDto.getDocumentName());
+            if (!CollectionUtils.isEmpty(embeddingMatchDtos)) {
+                String ragText = "这是知识库查询结果的json数据：\n";
+                ragText += "========以下是json数据类型描述========\n";
+                ragText += "EmbeddingMatchDto对象数组，每个对象包含以下字段：\n";
+                ragText += "- score (Double): 相似度分数，范围0-1，越接近1表示匹配度越高\n";
+                ragText += "- embeddingId (String): 向量ID，唯一标识符\n";
+                ragText += "- text (String): 匹配的文本内容片段\n";
+                ragText += "- metadata (EmbeddedMetadataDto): 元数据对象，包含以下字段：\n";
+                ragText += "  - metadata (Map<String, Object>): 元数据键值对，包含document_id(文档ID)、name(名称)、type(内容类型)、url(网页地址)、本地路径(本地文件路径)等\n";
+                ragText += "========以下是json数据========\n";
+                ragText += JacksonHelper.toJson(embeddingMatchDtos, false);
+                Content ragContent = TextContent.from(ragText);
+                contents.add(ragContent);
+            }
         }
         ChatMessage userMessage = UserMessage.from(contents);
         chatMessages.add(userMessage);
@@ -525,6 +527,8 @@ public class BasicController {
             document.metadata().put("document_id", documentId);
         }
         documentDto.setId(documentId);
+        documentDto.setType(document.metadata().getString("type"));
+        documentDto.setName(document.metadata().getString("name"));
         documentDto.setMetadata(null == document.metadata() ? new HashMap<>() : document.metadata().toMap());
 
         return documentDto;

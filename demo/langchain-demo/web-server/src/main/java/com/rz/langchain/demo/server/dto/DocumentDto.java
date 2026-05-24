@@ -11,6 +11,8 @@ import java.util.Map;
 public class DocumentDto implements Serializable {
     private String id;
     private String text;
+    private String name;
+    private String type;
     private Map<String, Object> metadata;
     private final List<TextSegmentDto> textSegments = new ArrayList<>();
 }
