@@ -9,6 +9,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15QuantizedEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
@@ -117,7 +118,7 @@ public class AppConfig {
     }
 
     @Bean
-    public EmbeddingStoreIngestor embeddingStoreIngestor(EmbeddingStore<TextSegment> embeddingStore) {
+    public EmbeddingStoreIngestor embeddingStoreIngestor(InMemoryEmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
         // TokenCountEstimator：token用量估算器
         // recursive 方法实际上是一个高层封装，它将 DocumentByParagraphSplitter、DocumentByLineSplitter、DocumentBySentenceSplitter、DocumentByWordSplitter、DocumentByCharacterSplitter 串联成一个责任链，并自动配置好各自的 subSplitter。开发者无需手动构建分层结构，直接调用此方法即可获得最佳实践的分割器。
         // DocumentSplitters.recursive(...)
@@ -146,13 +147,18 @@ public class AppConfig {
 
         return EmbeddingStoreIngestor.builder()
                 .documentSplitter(DocumentSplitters.recursive(500, 100))
-                .embeddingModel(new BgeSmallZhV15QuantizedEmbeddingModel())
+                .embeddingModel(embeddingModel)
                 .embeddingStore(embeddingStore)
                 .build();
     }
 
     @Bean
-    public EmbeddingStore<TextSegment> embeddingStore() {
+    public InMemoryEmbeddingStore<TextSegment> embeddingStore() {
         return new InMemoryEmbeddingStore<>();
+    }
+
+    @Bean
+    public EmbeddingModel embeddingModel() {
+        return new BgeSmallZhV15QuantizedEmbeddingModel();
     }
 }

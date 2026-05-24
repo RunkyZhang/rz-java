@@ -30,6 +30,7 @@ import dev.langchain4j.data.document.loader.UrlDocumentLoader;
 import dev.langchain4j.data.document.parser.TextDocumentParser;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
 import dev.langchain4j.data.document.transformer.jsoup.HtmlToTextDocumentTransformer;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.internal.Utils;
@@ -39,10 +40,12 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
-import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
@@ -77,7 +80,9 @@ public class BasicController {
     @Resource
     private EmbeddingStoreIngestor embeddingStoreIngestor;
     @Resource
-    private EmbeddingStore<TextSegment> embeddingStore;
+    private InMemoryEmbeddingStore<TextSegment> embeddingStore;
+    @Resource
+    private EmbeddingModel embeddingModel;
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
@@ -363,9 +368,12 @@ public class BasicController {
         return chatResponse.aiMessage().text();
     }
 
-    @GetMapping("/ingest")
+    // rag吸收
+    @GetMapping("/ragIngest")
     @ResponseBody
-    public List<TextSegmentDto> ingest() {
+    public List<TextSegmentDto> ragIngest() {
+        System.out.println(embeddingModel.dimension());
+
         // ApachePoiDocumentParser for office
         // ApacheTikaDocumentParser for default
         Document txtDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/最远的距离.txt", new TextDocumentParser());
@@ -380,16 +388,30 @@ public class BasicController {
         webDocument.metadata().put("title", "3年、1万人，快手技术团队首次系统披露AI研发范式升级历程");
         webDocument.metadata().put("core", "AI编程尝试");
 
-        List<Document> documents = new ArrayList<>();
-        documents.add(txtDocument);
-        documents.add(pdfDocument);
-        documents.add(webDocument);
-        embeddingStoreIngestor.ingest(documents);
+        // 吸收，保存
+        embeddingStoreIngestor.ingest(txtDocument, pdfDocument, webDocument);
 
-        String entriesJson = ((InMemoryEmbeddingStore<TextSegment>) embeddingStore).serializeToJson();
+        // check
+        String entriesJson = embeddingStore.serializeToJson();
         TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
-
         return null == textSegmentsDto ? null : textSegmentsDto.getEntries();
+    }
+
+    @GetMapping("/ragSearch")
+    @ResponseBody
+    public EmbeddingSearchResult<TextSegment> ragSearch() {
+        // 查询
+        Embedding queryEmbedding = embeddingModel.embed("林曦都和谁谈过恋爱？").content();
+        EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
+                .maxResults(5)
+                .minScore(0.5)
+                .queryEmbedding(queryEmbedding)
+                .build();
+
+        EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(embeddingSearchRequest);
+        System.out.println(embeddingSearchResult.matches());
+
+        return embeddingSearchResult;
     }
 
     // http://127.0.0.1:8080/html
