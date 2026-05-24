@@ -16,9 +16,7 @@
 
 package com.rz.langchain.demo.server;
 
-import com.rz.langchain.demo.server.dto.ChatMessagesDto;
-import com.rz.langchain.demo.server.dto.TextSegmentDto;
-import com.rz.langchain.demo.server.dto.TextSegmentsDto;
+import com.rz.langchain.demo.server.dto.*;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.FormatAddressAgent;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
@@ -44,21 +42,22 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.filter.Filter;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -67,6 +66,8 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Controller
 public class BasicController {
+    private static final Map<String, DocumentDto> memoryDocuments = new HashMap<>();
+
     @Resource
     private RpcProxy rpcProxy;
     @Resource(name = "qwen_3_5_plus")
@@ -371,52 +372,144 @@ public class BasicController {
     // rag吸收
     @GetMapping("/ragIngest")
     @ResponseBody
-    public List<TextSegmentDto> ragIngest() {
-        System.out.println(embeddingModel.dimension());
+    public Collection<DocumentDto> ragIngest() {
+        if (!CollectionUtils.isEmpty(memoryDocuments)) {
+            return memoryDocuments.values();
+        }
 
-        // ApachePoiDocumentParser for office
-        // ApacheTikaDocumentParser for default
+        // 最远的距离
         Document txtDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/最远的距离.txt", new TextDocumentParser());
         txtDocument.metadata().put("document_id", UUID.randomUUID().toString());
+        txtDocument.metadata().put("type", "小说");
+        txtDocument.metadata().put("name", "最远的距离");
+        memoryDocuments.put(txtDocument.metadata().getString("document_id"), toDocumentDto(txtDocument));
+
+        // 短篇小说写作指南
         Document pdfDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/短篇小说写作指南.pdf", new ApachePdfBoxDocumentParser());
         pdfDocument.metadata().put("document_id", UUID.randomUUID().toString());
+        pdfDocument.metadata().put("type", "技能");
+        pdfDocument.metadata().put("name", "短篇小说写作指南");
+        memoryDocuments.put(pdfDocument.metadata().getString("document_id"), toDocumentDto(pdfDocument));
+
+        // 3年、1万人，快手技术团队首次系统披露AI研发范式升级历程
         Document urlDocument = UrlDocumentLoader.load("https://news.qq.com/rain/a/20260209A03PA600", new TextDocumentParser());
         HtmlToTextDocumentTransformer htmlToTextDocumentTransformer = new HtmlToTextDocumentTransformer();
         // 把html中的内容转换成纯文本
         Document webDocument = htmlToTextDocumentTransformer.transform(urlDocument);
         webDocument.metadata().put("document_id", UUID.randomUUID().toString());
-        webDocument.metadata().put("title", "3年、1万人，快手技术团队首次系统披露AI研发范式升级历程");
+        webDocument.metadata().put("type", "新闻");
+        webDocument.metadata().put("name", "3年、1万人，快手技术团队首次系统披露AI研发范式升级历程");
         webDocument.metadata().put("core", "AI编程尝试");
+        memoryDocuments.put(webDocument.metadata().getString("document_id"), toDocumentDto(webDocument));
+
+        // ApachePoiDocumentParser for office
+        // ApacheTikaDocumentParser for default
 
         // 吸收，保存
         embeddingStoreIngestor.ingest(txtDocument, pdfDocument, webDocument);
 
-        // check
+        // format
         String entriesJson = embeddingStore.serializeToJson();
         TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
-        return null == textSegmentsDto ? null : textSegmentsDto.getEntries();
+        if (null == textSegmentsDto || null == textSegmentsDto.getEntries()) {
+            return null;
+        }
+        for (TextSegmentDto textSegmentDto : textSegmentsDto.getEntries()) {
+            if (null == textSegmentDto || null == textSegmentDto.getEmbedded() ||
+                    null == textSegmentDto.getEmbedded().getMetadata() ||
+                    CollectionUtils.isEmpty(textSegmentDto.getEmbedded().getMetadata().getMetadata())) {
+                continue;
+            }
+
+            Object value = textSegmentDto.getEmbedded().getMetadata().getMetadata().get("document_id");
+            String documentId = null == value ? "" : value.toString();
+            DocumentDto documentDto = memoryDocuments.get(documentId);
+            if (null == documentDto) {
+                continue;
+            }
+
+            documentDto.getTextSegments().add(textSegmentDto);
+        }
+
+        return memoryDocuments.values();
     }
 
+    // http://localhost:8080/ragSearch?value=林曦尝试过使用AI辅助编程去开发一个写短篇小说的App吗？
+    // 查不出来：http://localhost:8080/ragSearch?value=林曦尝试过使用AI辅助编程去开发一个写短篇小说的App吗？&type=小说&name=短篇小说写作指南
+    // 林曦都和谁谈过恋爱？
     @GetMapping("/ragSearch")
     @ResponseBody
-    public EmbeddingSearchResult<TextSegment> ragSearch() {
-        // 查询
-        Embedding queryEmbedding = embeddingModel.embed("林曦都和谁谈过恋爱？").content();
+    public List<EmbeddingMatchDto> ragSearch(@RequestParam(value = "value", defaultValue = "介绍一下林曦") String value,
+                                             @RequestParam(value = "type", defaultValue = "all") String type,
+                                             @RequestParam(value = "name", defaultValue = "all") String name) {
+        // 条件
+        Embedding queryEmbedding = embeddingModel.embed(value).content();
+        Filter filter = null;
+        Filter typeFilter = MetadataFilterBuilder.metadataKey("type").isEqualTo(type);
+        Filter nameFilter = MetadataFilterBuilder.metadataKey("name").isEqualTo(name);
+        if (!"all".equals(type) && !"all".equals(name)) {
+            filter = Filter.and(typeFilter, nameFilter);
+        } else if (!"all".equals(type)) {
+            filter = typeFilter;
+        } else if (!"all".equals(name)) {
+            filter = nameFilter;
+        }
         EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
-                .maxResults(5)
+                .maxResults(10)
                 .minScore(0.5)
                 .queryEmbedding(queryEmbedding)
+                .filter(filter)
                 .build();
 
+        // 查询
         EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(embeddingSearchRequest);
-        System.out.println(embeddingSearchResult.matches());
 
-        return embeddingSearchResult;
+        // 转换
+        List<EmbeddingMatchDto> embeddingMatchDtos = new ArrayList<>();
+        for (EmbeddingMatch<TextSegment> embeddingMatch : embeddingSearchResult.matches()) {
+            if (null == embeddingMatch) {
+                continue;
+            }
+
+            // 填充数据
+            EmbeddingMatchDto embeddingMatchDto = new EmbeddingMatchDto();
+            embeddingMatchDto.setScore(embeddingMatch.score());
+            embeddingMatchDto.setEmbeddingId(embeddingMatch.embeddingId());
+            embeddingMatchDtos.add(embeddingMatchDto);
+
+            TextSegment textSegment = embeddingMatch.embedded();
+            if (null == textSegment) {
+                continue;
+            }
+            embeddingMatchDto.setText(textSegment.text());
+            if (null == textSegment.metadata() || CollectionUtils.isEmpty(textSegment.metadata().toMap())) {
+                continue;
+            }
+            EmbeddedMetadataDto embeddedMetadataDto = new EmbeddedMetadataDto();
+            embeddingMatchDto.setMetadata(embeddedMetadataDto);
+            embeddedMetadataDto.setMetadata(textSegment.metadata().toMap());
+        }
+
+        return embeddingMatchDtos;
     }
 
     // http://127.0.0.1:8080/html
     @RequestMapping("/html")
     public String html() {
         return "index.html";
+    }
+
+    private DocumentDto toDocumentDto(Document document) {
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.setText(document.text());
+        String documentId = document.metadata().getString("document_id");
+        if (StringUtils.isBlank(documentId)) {
+            documentId = UUID.randomUUID().toString();
+            document.metadata().put("document_id", documentId);
+        }
+        documentDto.setId(documentId);
+        documentDto.setMetadata(null == document.metadata() ? new HashMap<>() : document.metadata().toMap());
+
+        return documentDto;
     }
 }

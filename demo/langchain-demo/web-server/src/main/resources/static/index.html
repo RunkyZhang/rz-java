@@ -256,6 +256,46 @@
             transform: none;
         }
 
+        .ingest-button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ingest-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .ingest-button:active {
+            transform: translateY(0);
+        }
+
+        .ingest-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
         .loading {
             display: inline-block;
             width: 20px;
@@ -318,6 +358,10 @@
         </div>
 
         <div class="chat-input-container">
+            <button class="ingest-button" id="ingestButton" onclick="ingestKnowledge()">
+                <span id="ingestButtonText">📚 知识库Ingest</span>
+                <span id="ingestSpinner" class="button-spinner" style="display: none;"></span>
+            </button>
             <input
                     type="text"
                     class="chat-input"
@@ -334,10 +378,54 @@
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const sendButton = document.getElementById('sendButton');
+    const ingestButton = document.getElementById('ingestButton');
+    const ingestButtonText = document.getElementById('ingestButtonText');
+    const ingestSpinner = document.getElementById('ingestSpinner');
 
     function handleKeyPress(event) {
         if (event.key === 'Enter') {
             sendMessage();
+        }
+    }
+
+    async function ingestKnowledge() {
+        // 禁用按钮并显示 loading
+        ingestButton.disabled = true;
+        ingestButtonText.textContent = '⏳ Ingest中...';
+        ingestSpinner.style.display = 'inline-block';
+
+        try {
+            const response = await fetch('/ragIngest', {
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            // ragIngest 接口返回的是 DocumentDto 数组
+            const data = await response.json();
+            const count = Array.isArray(data) ? data.length : 0;
+            
+            // 更新按钮文本显示数量
+            ingestButtonText.textContent = `📚 知识库${count}`;
+            
+            // 在聊天区域显示成功消息
+            addMessage(`✅ 知识库导入完成！共导入 ${count} 个Document。`, false);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            ingestButtonText.textContent = '❌ Ingest失败';
+            addMessage('❌ 知识库导入失败，请稍后重试。', false);
+            
+            // 3秒后恢复原始文本
+            setTimeout(() => {
+                ingestButtonText.textContent = '📚 知识库Ingest';
+            }, 3000);
+        } finally {
+            // 隐藏 loading 并启用按钮
+            ingestSpinner.style.display = 'none';
+            ingestButton.disabled = false;
         }
     }
 
