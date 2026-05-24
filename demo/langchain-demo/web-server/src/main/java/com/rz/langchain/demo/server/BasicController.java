@@ -119,13 +119,30 @@ public class BasicController {
 
         // 创建用户消息
         List<Content> contents = new ArrayList<>();
-        Content textContent = TextContent.from(requestDto.getMessage());
-        contents.add(textContent);
+        // 问题
+        Content messageContent = TextContent.from(requestDto.getMessage());
+        contents.add(messageContent);
         if (!CollectionUtils.isEmpty(requestDto.getImageBase64s())) {
             for (String imageBase64 : requestDto.getImageBase64s()) {
                 ImageContent imageContent = ImageContent.from(imageBase64, "image/jpg");
                 contents.add(imageContent);
             }
+        }
+        // Rag搜索结果
+        if (!CollectionUtils.isEmpty(memoryDocuments) && !StringUtils.isBlank(requestDto.getRagName())) {
+            List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), requestDto.getRagName(), "all");
+            String ragText = "这是知识库查询结果的json数据：\n";
+            ragText += "========以下是json数据类型描述========\n";
+            ragText += "EmbeddingMatchDto对象数组，每个对象包含以下字段：\n";
+            ragText += "- score (Double): 相似度分数，范围0-1，越接近1表示匹配度越高\n";
+            ragText += "- embeddingId (String): 向量ID，唯一标识符\n";
+            ragText += "- text (String): 匹配的文本内容片段\n";
+            ragText += "- metadata (EmbeddedMetadataDto): 元数据对象，包含以下字段：\n";
+            ragText += "  - metadata (Map<String, Object>): 元数据键值对，包含document_id(文档ID)、name(名称)、type(内容类型)、url(网页地址)、本地路径(本地文件路径)等\n";
+            ragText += "========以下是json数据========\n";
+            ragText += JacksonHelper.toJson(embeddingMatchDtos, false);
+            Content ragContent = TextContent.from(ragText);
+            contents.add(ragContent);
         }
         ChatMessage userMessage = UserMessage.from(contents);
         chatMessages.add(userMessage);
