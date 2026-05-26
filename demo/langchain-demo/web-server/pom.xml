@@ -66,6 +66,13 @@
             <artifactId>langchain4j-embeddings-bge-small-zh-v15-q</artifactId>
         </dependency>
 
+        <!-- langchain4j rerank[不用了自己实现了] -->
+<!--        <dependency>-->
+<!--            <groupId>dev.langchain4j</groupId>-->
+<!--            <artifactId>langchain4j-community-xinference</artifactId>-->
+<!--            <version>1.15.0-beta25</version>-->
+<!--        </dependency>-->
+
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -40,6 +40,8 @@ import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
@@ -84,11 +86,20 @@ public class BasicController {
     private InMemoryEmbeddingStore<TextSegment> embeddingStore;
     @Resource
     private EmbeddingModel embeddingModel;
+    @Resource
+    private ScoringModel scoringModel;
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
+        String text =
+                "北京市（Beijing），简称“京”，古称燕京、北平，是中华人民共和国首都、直辖市、国家中心城市、超大城市， [185]国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心， [1]中国历史文化名城和古都之一，世界一线城市。 [3] [142] [188]截至2023年10月，北京市下辖16个区，总面积16410.54平方千米。 [82] [193] [195]2023年末，北京市常住人口2185.8万人。 [214-215]";
+        String query = "中国首都是哪座城市";
+        Response<Double> response = scoringModel.score(text, query);
+        System.out.println(response);
+
+
         String answer = "";
         answer = getAnswerWithJson(value);
         // answer = getAnswerWithSystemMessage(value);
