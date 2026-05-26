@@ -42,14 +42,19 @@ public class BailianScoringModel implements ScoringModel {
         }
 
         // 提取segments中的文本内容
+        boolean hasValidDocument = false;
         List<String> documents = new ArrayList<>();
         for (TextSegment textSegment : segments) {
-            if (null == textSegment || null == textSegment.text()) {
+            if (null == textSegment || StringUtils.isBlank(textSegment.text())) {
                 documents.add("");
                 continue;
             }
 
+            hasValidDocument = true;
             documents.add(textSegment.text());
+        }
+        if (!hasValidDocument) {
+            return new Response<>(scores, null, FinishReason.STOP);
         }
 
         // 调用RPC接口获取评分结果

@@ -93,12 +93,11 @@ public class BasicController {
     @GetMapping("/hello")
     @ResponseBody
     public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
-        String text =
-                "北京市（Beijing），简称“京”，古称燕京、北平，是中华人民共和国首都、直辖市、国家中心城市、超大城市， [185]国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心， [1]中国历史文化名城和古都之一，世界一线城市。 [3] [142] [188]截至2023年10月，北京市下辖16个区，总面积16410.54平方千米。 [82] [193] [195]2023年末，北京市常住人口2185.8万人。 [214-215]";
-        String query = "中国首都是哪座城市";
-        Response<Double> response = scoringModel.score(text, query);
-        System.out.println(response);
-
+//        String text =
+//                "北京市（Beijing），简称“京”，古称燕京、北平，是中华人民共和国首都、直辖市、国家中心城市、超大城市， [185]国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心， [1]中国历史文化名城和古都之一，世界一线城市。 [3] [142] [188]截至2023年10月，北京市下辖16个区，总面积16410.54平方千米。 [82] [193] [195]2023年末，北京市常住人口2185.8万人。 [214-215]";
+//        String query = "中国首都是哪座城市";
+//        Response<Double> response = scoringModel.score(text, query);
+//        System.out.println(response);
 
         String answer = "";
         answer = getAnswerWithJson(value);
@@ -141,7 +140,7 @@ public class BasicController {
         }
         // Rag搜索结果
         if (!CollectionUtils.isEmpty(memoryDocuments) && !StringUtils.isBlank(requestDto.getDocumentName())) {
-            List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), "all", requestDto.getDocumentName());
+            List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), true, "all", requestDto.getDocumentName());
             if (!CollectionUtils.isEmpty(embeddingMatchDtos)) {
                 String ragText = "这是知识库查询结果的json数据：\n";
                 ragText += "========以下是json数据类型描述========\n";
@@ -470,6 +469,7 @@ public class BasicController {
     @GetMapping("/ragSearch")
     @ResponseBody
     public List<EmbeddingMatchDto> ragSearch(@RequestParam(value = "value", defaultValue = "介绍一下林曦") String value,
+                                             @RequestParam(value = "rerank", defaultValue = "true") boolean rerank,
                                              @RequestParam(value = "type", defaultValue = "all") String type,
                                              @RequestParam(value = "name", defaultValue = "all") String name) {
         // 条件
@@ -494,16 +494,44 @@ public class BasicController {
         // 查询
         EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(embeddingSearchRequest);
 
+        List<Double> rerankScores = new ArrayList<>();
+        if (rerank) {
+            List<TextSegment> textSegments = new ArrayList<>();
+            for (EmbeddingMatch<TextSegment> embeddingMatch : embeddingSearchResult.matches()) {
+                textSegments.add(null == embeddingMatch ? null : embeddingMatch.embedded());
+            }
+
+            if (!CollectionUtils.isEmpty(textSegments)) {
+                try {
+                    Response<List<Double>> response = this.scoringModel.scoreAll(textSegments, value);
+                    rerankScores = response.content();
+                } catch (Exception e) {
+                    log.error("failed to rerank from bailian rerank model", e);
+                }
+            }
+        }
+
         // 转换
         List<EmbeddingMatchDto> embeddingMatchDtos = new ArrayList<>();
+        int index = -1;
         for (EmbeddingMatch<TextSegment> embeddingMatch : embeddingSearchResult.matches()) {
+            index++;
             if (null == embeddingMatch) {
                 continue;
             }
 
+            // 获取rerank分数。如果rerank分数是0，则pass这条数据
+            Double rerankScore = null;
+            if (!CollectionUtils.isEmpty(rerankScores) && index < rerankScores.size()) {
+                rerankScore = rerankScores.get(index);
+                if (0 == rerankScore) {
+                    continue;
+                }
+            }
+
             // 填充数据
             EmbeddingMatchDto embeddingMatchDto = new EmbeddingMatchDto();
-            embeddingMatchDto.setScore(embeddingMatch.score());
+            embeddingMatchDto.setScore(null == rerankScore ? embeddingMatch.score() : rerankScore);
             embeddingMatchDto.setEmbeddingId(embeddingMatch.embeddingId());
             embeddingMatchDtos.add(embeddingMatchDto);
 
