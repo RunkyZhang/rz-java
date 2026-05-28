@@ -13,6 +13,8 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.chroma.ChromaApiVersion;
+import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,8 +152,25 @@ public class AppConfig {
     }
 
     @Bean
-    public InMemoryEmbeddingStore<TextSegment> embeddingStore() {
+    public InMemoryEmbeddingStore<TextSegment> inMemoryEmbeddingStore() {
         return new InMemoryEmbeddingStore<>();
+    }
+
+    @Bean
+    public ChromaEmbeddingStore chromaEmbeddingStore() {
+        // 默认使用 ChromaApiVersion.V2。且
+        // 注意：Chroma服务启动默认只监听ipv6。所以123.0.0.1:8000访问不了。localhost:8000也访问不了因为Java组件中默认使用ipv4导致localhost解析成123.0.0.1。
+        //      所以自能使用ipv6的本地地址[::1]:8000
+        return ChromaEmbeddingStore.builder()
+                .apiVersion(ChromaApiVersion.V2)
+                .baseUrl("http://[::1]:8000")
+                .tenantName("default") // 如果不传默认租户名，则默认使用default。如果没有则创建default租户
+                .databaseName("default") // 如果不传默认数据库名，则默认使用default。如果没有则创建default数据库
+                .collectionName("default")
+                .timeout(Duration.ofSeconds(5))
+                .logRequests(true)
+                .logResponses(true)
+                .build();
     }
 
     @Bean
@@ -163,4 +182,63 @@ public class AppConfig {
     public ScoringModel scoringModel() {
         return new BailianScoringModel("qwen3-rerank", 5, null);
     }
+
+//    @PostConstruct
+//    public void httpClient() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+//        HttpClientBuilder httpClientBuilder = HttpClientBuilderLoader.loadHttpClientBuilder();
+//
+//        System.out.println("Builder 类型: " + httpClientBuilder.getClass().getName());
+//
+//        Method method = httpClientBuilder.getClass()
+//                .getMethod("httpClientBuilder", java.net.http.HttpClient.Builder.class);
+//
+//        java.net.http.HttpClient.Builder customBuilder = java.net.http.HttpClient.newBuilder()
+//                .connectTimeout(Duration.ofSeconds(5))
+//                .version(java.net.http.HttpClient.Version.HTTP_1_1);
+//
+//        System.out.println("自定义 Builder 版本: " + customBuilder);
+//
+//        Object result = method.invoke(httpClientBuilder, customBuilder);
+//        System.out.println("方法返回值: " + result);
+//        System.out.println("返回值是否相同: " + (result == httpClientBuilder));
+//
+//        // 检查 builder 内部的 httpClientBuilder 字段是否正确设置
+//        Method getBuilderMethod = httpClientBuilder.getClass().getMethod("httpClientBuilder");
+//        java.net.http.HttpClient.Builder internalBuilder = (java.net.http.HttpClient.Builder) getBuilderMethod.invoke(httpClientBuilder);
+//        System.out.println("内部 Builder 版本: " + internalBuilder);
+//        System.out.println("内部 Builder 是否与自定义相同: " + (internalBuilder == customBuilder));
+//
+//        // 检查系统属性
+//        System.out.println("java.net.preferIPv6Addresses: " + System.getProperty("java.net.preferIPv6Addresses"));
+//        System.out.println("localhost 解析结果:");
+//        try {
+//            java.net.InetAddress[] addresses = java.net.InetAddress.getAllByName("localhost");
+//            for (java.net.InetAddress addr : addresses) {
+//                System.out.println("  - " + addr.getHostAddress() + " (" + (addr instanceof java.net.Inet6Address ? "IPv6" : "IPv4") + ")");
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        HttpClient httpClient = new LoggingHttpClient(
+//                httpClientBuilder.connectTimeout(Duration.ofSeconds(5)).readTimeout(Duration.ofSeconds(5)).build(), true, true);
+//
+//        try {
+//            SuccessfulHttpResponse successfulHttpResponse = httpClient.execute(HttpRequest.builder().method(HttpMethod.GET).url("https://www.baidu.com").build());
+//            System.out.println("百度访问成功: " + successfulHttpResponse.body());
+//
+//            // 注意：Chroma 只监听 IPv6，需要使用 [::1] 格式
+//            successfulHttpResponse = httpClient.execute(HttpRequest.builder().method(HttpMethod.GET).url("http://[::1]:8000/api/v2/tenants/default").build());
+//            System.out.println("Chroma 访问成功: " + successfulHttpResponse.body());
+//        } catch (Exception e) {
+//            System.err.println("连接测试失败: " + e.getMessage());
+//            System.err.println("异常类型: " + e.getClass().getName());
+//            if (e.getCause() != null) {
+//                System.err.println("根本原因: " + e.getCause().getMessage());
+//                System.err.println("根本原因类型: " + e.getCause().getClass().getName());
+//            }
+//            e.printStackTrace();
+//            throw e;
+//        }
+//    }
 }
