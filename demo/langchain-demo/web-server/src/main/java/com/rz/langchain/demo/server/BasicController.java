@@ -48,6 +48,7 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
@@ -83,7 +84,9 @@ public class BasicController {
     @Resource
     private EmbeddingStoreIngestor embeddingStoreIngestor;
     @Resource
-    private InMemoryEmbeddingStore<TextSegment> embeddingStore;
+    private InMemoryEmbeddingStore<TextSegment> inMemoryEmbeddingStore;
+    @Resource
+    private ChromaEmbeddingStore chromaEmbeddingStore;
     @Resource
     private EmbeddingModel embeddingModel;
     @Resource
@@ -402,6 +405,10 @@ public class BasicController {
     @GetMapping("/ragIngest")
     @ResponseBody
     public Collection<DocumentDto> ragIngest() {
+        if (true) {
+            return null;
+        }
+
         if (!CollectionUtils.isEmpty(memoryDocuments)) {
             return memoryDocuments.values();
         }
@@ -438,7 +445,7 @@ public class BasicController {
         embeddingStoreIngestor.ingest(txtDocument, pdfDocument, webDocument);
 
         // format
-        String entriesJson = embeddingStore.serializeToJson();
+        String entriesJson = inMemoryEmbeddingStore.serializeToJson();
         TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
         if (null == textSegmentsDto || null == textSegmentsDto.getEntries()) {
             return null;
@@ -492,7 +499,7 @@ public class BasicController {
                 .build();
 
         // 查询
-        EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(embeddingSearchRequest);
+        EmbeddingSearchResult<TextSegment> embeddingSearchResult = chromaEmbeddingStore.search(embeddingSearchRequest);
 
         List<Double> rerankScores = new ArrayList<>();
         if (rerank) {
