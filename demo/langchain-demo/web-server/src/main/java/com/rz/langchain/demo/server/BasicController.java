@@ -17,6 +17,7 @@
 package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.dto.*;
+import com.rz.langchain.demo.server.mapper.EmbeddingMetadataMapper;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.FormatAddressAgent;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
@@ -44,10 +45,7 @@ import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
-import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
-import dev.langchain4j.store.embedding.EmbeddingSearchResult;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.*;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
@@ -55,6 +53,7 @@ import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -62,6 +61,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
@@ -69,7 +69,10 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Controller
 public class BasicController {
-    private static final Map<String, DocumentDto> memoryDocuments = new HashMap<>();
+    private static Map<String, DocumentDto> savedDocuments = new HashMap<>();
+
+    @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
+    private boolean withInMemoryEmbeddingStore;
 
     @Resource
     private RpcProxy rpcProxy;
@@ -91,6 +94,8 @@ public class BasicController {
     private EmbeddingModel embeddingModel;
     @Resource
     private ScoringModel scoringModel;
+    @Resource
+    private EmbeddingMetadataMapper embeddingMetadataMapper;
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
@@ -142,7 +147,7 @@ public class BasicController {
             }
         }
         // Rag搜索结果
-        if (!CollectionUtils.isEmpty(memoryDocuments) && !StringUtils.isBlank(requestDto.getDocumentName())) {
+        if (!CollectionUtils.isEmpty(savedDocuments) && !StringUtils.isBlank(requestDto.getDocumentName())) {
             List<EmbeddingMatchDto> embeddingMatchDtos = ragSearch(requestDto.getMessage(), true, "all", requestDto.getDocumentName());
             if (!CollectionUtils.isEmpty(embeddingMatchDtos)) {
                 String ragText = "这是知识库查询结果的json数据：\n";
@@ -405,12 +410,12 @@ public class BasicController {
     @GetMapping("/ragIngest")
     @ResponseBody
     public Collection<DocumentDto> ragIngest() {
-        if (true) {
-            return null;
+        // 查看数据
+        if (!withInMemoryEmbeddingStore) {
+            BasicController.savedDocuments = findDocuments();
         }
-
-        if (!CollectionUtils.isEmpty(memoryDocuments)) {
-            return memoryDocuments.values();
+        if (!CollectionUtils.isEmpty(savedDocuments)) {
+            return savedDocuments.values();
         }
 
         // 最远的距离
@@ -418,14 +423,14 @@ public class BasicController {
         txtDocument.metadata().put("document_id", UUID.randomUUID().toString());
         txtDocument.metadata().put("type", "小说");
         txtDocument.metadata().put("name", "最远的距离");
-        memoryDocuments.put(txtDocument.metadata().getString("document_id"), toDocumentDto(txtDocument));
+        savedDocuments.put(txtDocument.metadata().getString("document_id"), toDocumentDto(txtDocument));
 
         // 短篇小说写作指南
         Document pdfDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/短篇小说写作指南.pdf", new ApachePdfBoxDocumentParser());
         pdfDocument.metadata().put("document_id", UUID.randomUUID().toString());
         pdfDocument.metadata().put("type", "技能");
         pdfDocument.metadata().put("name", "短篇小说写作指南");
-        memoryDocuments.put(pdfDocument.metadata().getString("document_id"), toDocumentDto(pdfDocument));
+        savedDocuments.put(pdfDocument.metadata().getString("document_id"), toDocumentDto(pdfDocument));
 
         // 3年、1万人，快手技术团队首次系统披露AI研发范式升级历程
         Document urlDocument = UrlDocumentLoader.load("https://news.qq.com/rain/a/20260209A03PA600", new TextDocumentParser());
@@ -436,7 +441,7 @@ public class BasicController {
         webDocument.metadata().put("type", "新闻");
         webDocument.metadata().put("name", "3年、1万人，快手技术团队首次系统披露AI研发范式升级历程");
         webDocument.metadata().put("core", "AI编程尝试");
-        memoryDocuments.put(webDocument.metadata().getString("document_id"), toDocumentDto(webDocument));
+        savedDocuments.put(webDocument.metadata().getString("document_id"), toDocumentDto(webDocument));
 
         // ApachePoiDocumentParser for office
         // ApacheTikaDocumentParser for default
@@ -445,29 +450,33 @@ public class BasicController {
         embeddingStoreIngestor.ingest(txtDocument, pdfDocument, webDocument);
 
         // format
-        String entriesJson = inMemoryEmbeddingStore.serializeToJson();
-        TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
-        if (null == textSegmentsDto || null == textSegmentsDto.getEntries()) {
-            return null;
-        }
-        for (TextSegmentDto textSegmentDto : textSegmentsDto.getEntries()) {
-            if (null == textSegmentDto || null == textSegmentDto.getEmbedded() ||
-                    null == textSegmentDto.getEmbedded().getMetadata() ||
-                    CollectionUtils.isEmpty(textSegmentDto.getEmbedded().getMetadata().getMetadata())) {
-                continue;
+        if (withInMemoryEmbeddingStore) {
+            String entriesJson = inMemoryEmbeddingStore.serializeToJson();
+            TextSegmentsDto textSegmentsDto = JacksonHelper.toObj(entriesJson, TextSegmentsDto.class, true);
+            if (null == textSegmentsDto || null == textSegmentsDto.getEntries()) {
+                return null;
             }
+            for (TextSegmentDto textSegmentDto : textSegmentsDto.getEntries()) {
+                if (null == textSegmentDto || null == textSegmentDto.getEmbedded() ||
+                        null == textSegmentDto.getEmbedded().getMetadata() ||
+                        CollectionUtils.isEmpty(textSegmentDto.getEmbedded().getMetadata().getMetadata())) {
+                    continue;
+                }
 
-            Object value = textSegmentDto.getEmbedded().getMetadata().getMetadata().get("document_id");
-            String documentId = null == value ? "" : value.toString();
-            DocumentDto documentDto = memoryDocuments.get(documentId);
-            if (null == documentDto) {
-                continue;
+                Object value = textSegmentDto.getEmbedded().getMetadata().getMetadata().get("document_id");
+                String documentId = null == value ? "" : value.toString();
+                DocumentDto documentDto = savedDocuments.get(documentId);
+                if (null == documentDto) {
+                    continue;
+                }
+
+                documentDto.getTextSegments().add(textSegmentDto);
             }
-
-            documentDto.getTextSegments().add(textSegmentDto);
+        } else {
+            savedDocuments = findDocuments();
         }
 
-        return memoryDocuments.values();
+        return savedDocuments.values();
     }
 
     // http://localhost:8080/ragSearch?value=林曦尝试过使用AI辅助编程去开发一个写短篇小说的App吗？
@@ -498,9 +507,11 @@ public class BasicController {
                 .filter(filter)
                 .build();
 
+        EmbeddingStore<TextSegment> embeddingStore = withInMemoryEmbeddingStore ? inMemoryEmbeddingStore : chromaEmbeddingStore;
         // 查询
-        EmbeddingSearchResult<TextSegment> embeddingSearchResult = chromaEmbeddingStore.search(embeddingSearchRequest);
+        EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(embeddingSearchRequest);
 
+        // 评分
         List<Double> rerankScores = new ArrayList<>();
         if (rerank) {
             List<TextSegment> textSegments = new ArrayList<>();
@@ -562,6 +573,39 @@ public class BasicController {
     @RequestMapping("/html")
     public String html() {
         return "index.html";
+    }
+
+    private Map<String, DocumentDto> findDocuments() {
+        Map<String, DocumentDto> savedDocuments = new HashMap<>();
+        List<EmbeddingMetadataEntity> embeddingMetadataEntities = embeddingMetadataMapper.groupByKey("document_id");
+        Set<Integer> documentIds = embeddingMetadataEntities.stream().filter(Objects::nonNull).map(EmbeddingMetadataEntity::getId).collect(Collectors.toSet());
+        for (Integer documentId : documentIds) {
+            embeddingMetadataEntities = embeddingMetadataMapper.selectById(documentId);
+            if (CollectionUtils.isEmpty(embeddingMetadataEntities)) {
+                continue;
+            }
+
+            DocumentDto documentDto = new DocumentDto();
+            for (EmbeddingMetadataEntity embeddingMetadataEntity : embeddingMetadataEntities) {
+                if (null == embeddingMetadataEntity) {
+                    continue;
+                }
+
+                if ("name".equals(embeddingMetadataEntity.getKey())) {
+                    documentDto.setName(embeddingMetadataEntity.getString_value());
+                } else if ("type".equals(embeddingMetadataEntity.getKey())) {
+                    documentDto.setType(embeddingMetadataEntity.getString_value());
+                } else if ("document_id".equals(embeddingMetadataEntity.getKey())) {
+                    documentDto.setId(embeddingMetadataEntity.getString_value());
+                }
+            }
+            if (StringUtils.isBlank(documentDto.getId()) || StringUtils.isBlank(documentDto.getName())) {
+                continue;
+            }
+            savedDocuments.put(documentDto.getId(), documentDto);
+        }
+
+        return savedDocuments;
     }
 
     private DocumentDto toDocumentDto(Document document) {
