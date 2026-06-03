@@ -54,11 +54,13 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -96,6 +98,10 @@ public class BasicController {
     private ScoringModel scoringModel;
     @Resource
     private EmbeddingMetadataMapper embeddingMetadataMapper;
+    @Resource
+    private ResourceLoader resourceLoader;
+
+    // TODO：session隔离查看代码 /customerSupportAgent
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
@@ -409,7 +415,7 @@ public class BasicController {
     // rag吸收
     @GetMapping("/ragIngest")
     @ResponseBody
-    public Collection<DocumentDto> ragIngest() {
+    public Collection<DocumentDto> ragIngest() throws IOException {
         // 查看数据
         if (!withInMemoryEmbeddingStore) {
             BasicController.savedDocuments = findDocuments();
@@ -419,7 +425,8 @@ public class BasicController {
         }
 
         // 最远的距离
-        Document txtDocument = FileSystemDocumentLoader.loadDocument("/Users/00545579/Downloads/最远的距离.txt", new TextDocumentParser());
+        org.springframework.core.io.Resource resource = resourceLoader.getResource("classpath:The_farthest_distance.txt");
+        Document txtDocument = FileSystemDocumentLoader.loadDocument(resource.getFile().toPath(), new TextDocumentParser());
         txtDocument.metadata().put("document_id", UUID.randomUUID().toString());
         txtDocument.metadata().put("type", "小说");
         txtDocument.metadata().put("name", "最远的距离");

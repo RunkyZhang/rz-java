@@ -166,12 +166,12 @@ public class AppConfig {
     // 构建虚拟环境（创建一个文件夹）：python3 -m venv chroma
     // 激活虚拟环境（只在当前shell生效，不影响全局变量，下次使用还要在/chroma平级目录执行激活）：source chroma/bin/activate
     // 安装chroma（可能python3需要升级python3 -m pip install --upgrade pip）：pip install chromadb
-    // 启动服务（只监听ipv6）：chroma run --path ./my_chroma_data --port 8000
+    // 启动服务（只监听ipv6）：chroma run --path ./data --port 8000
     @Bean
     public ChromaEmbeddingStore chromaEmbeddingStore() {
-        // 默认使用 ChromaApiVersion.V2。且
-        // 注意：Chroma服务启动默认只监听ipv6。所以123.0.0.1:8000访问不了。localhost:8000也访问不了因为Java组件中默认使用ipv4导致localhost解析成123.0.0.1。
-        //      所以自能使用ipv6的本地地址[::1]:8000
+        // 默认使用 ChromaApiVersion.V2
+        // TODO注意：Chroma服务启动默认只监听ipv6。所以123.0.0.1:8000访问不了。localhost:8000也访问不了因为Java组件中默认使用ipv4导致localhost解析成123.0.0.1。
+        //          所以自能使用ipv6的本地地址[::1]:8000
         return ChromaEmbeddingStore.builder()
                 .apiVersion(ChromaApiVersion.V2)
                 .baseUrl("http://[::1]:8000")
