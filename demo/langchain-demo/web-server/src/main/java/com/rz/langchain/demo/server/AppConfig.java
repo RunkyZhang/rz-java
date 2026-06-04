@@ -5,6 +5,7 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -31,6 +32,8 @@ public class AppConfig {
     public String bailianApiKey;
     @Value("${ai.model.deepseek.apiKey}")
     public String deepseekApiKey;
+    @Value("${ai.model.opencode.go.apiKey}")
+    public String openCodeApiKey;
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
 
@@ -90,6 +93,19 @@ public class AppConfig {
                 .timeout(Duration.ofSeconds(300))
                 .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
                 .strictJsonSchema(true)
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean("opencode_go_qwen3.7_max")
+    public AnthropicChatModel anthropicChatModel_OpenCode_Go_Qwen3_7_Max() {
+        return AnthropicChatModel.builder()
+                .baseUrl("https://opencode.ai/zen/go/v1")
+                .apiKey(openCodeApiKey)
+                .modelName("qwen3.7-max")
+                .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
                 .logRequests(true)
                 .logResponses(true)
                 .build();

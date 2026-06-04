@@ -36,6 +36,8 @@ import dev.langchain4j.data.message.*;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.internal.Utils;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -82,6 +84,8 @@ public class BasicController {
     private RpcProxy rpcProxy;
     @Resource(name = "qwen_3_5_plus")
     private OpenAiChatModel openAiChatModel;
+    @Resource(name = "opencode_go_qwen3.7_max")
+    private AnthropicChatModel anthropicChatModel;
     @Resource
     private StreamingChatModel streamingChatModel;
     @Resource
@@ -139,6 +143,8 @@ public class BasicController {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
         Assert.hasText(requestDto.getMessage(), "Assert.hasText: requestDto.getMessage()");
 
+        ChatModel chatModel = requestDto.isAnthropicApiAdapter() ? anthropicChatModel : openAiChatModel;
+
         // 获取历史会话
         List<ChatMessage> chatMessages = chatMemory.messages();
         chatMessages.addAll(chatMemory.messages());
@@ -184,7 +190,7 @@ public class BasicController {
                     .messages(chatMessages)
                     .toolSpecifications(toolsSelector.getToolSpecifications())
                     .build();
-            ChatResponse chatResponse = openAiChatModel.chat(chatRequest);
+            ChatResponse chatResponse = chatModel.chat(chatRequest);
             AiMessage aiMessage = chatResponse.aiMessage();
             chatMessages.add(aiMessage);
             // 存储

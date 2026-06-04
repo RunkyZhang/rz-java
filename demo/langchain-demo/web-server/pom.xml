@@ -33,11 +33,19 @@
         <!-- langchain4j -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai</artifactId>
+            <artifactId>langchain4j</artifactId>
         </dependency>
+
+        <!-- langchain4j openai协议实现 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+
+        <!-- langchain4j anthropic协议实现 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
         </dependency>
 
         <!-- langchain4j document parser -->
