@@ -65,6 +65,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -434,7 +436,11 @@ public class BasicController {
 
         // 最远的距离
         org.springframework.core.io.Resource resource = resourceLoader.getResource("classpath:The_farthest_distance.txt");
-        Document txtDocument = FileSystemDocumentLoader.loadDocument(resource.getFile().toPath(), new TextDocumentParser());
+        String txtContent;
+        try (InputStream inputStream = resource.getInputStream()) {
+            txtContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        Document txtDocument = Document.from(txtContent);
         txtDocument.metadata().put("document_id", UUID.randomUUID().toString());
         txtDocument.metadata().put("type", "小说");
         txtDocument.metadata().put("name", "最远的距离");
