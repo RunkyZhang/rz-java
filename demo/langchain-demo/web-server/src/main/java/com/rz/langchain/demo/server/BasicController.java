@@ -82,7 +82,7 @@ public class BasicController {
 
     @Resource
     private RpcProxy rpcProxy;
-    @Resource(name = "qwen_3_5_plus")
+    @Resource(name = "opencode_go_glm_5.1")
     private OpenAiChatModel openAiChatModel;
     @Resource(name = "opencode_go_qwen3.7_max")
     private AnthropicChatModel anthropicChatModel;

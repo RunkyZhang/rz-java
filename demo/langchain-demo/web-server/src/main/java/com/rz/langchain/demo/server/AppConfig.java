@@ -27,7 +27,6 @@ import java.time.Duration;
 
 @Configuration
 public class AppConfig {
-
     @Value("${ai.model.bailian.codeplan.apiKey}")
     public String bailianApiKey;
     @Value("${ai.model.deepseek.apiKey}")
@@ -53,19 +52,22 @@ public class AppConfig {
                 .build();
     }
 
-    @Bean("glm_5")
-    public OpenAiChatModel openAiChatModel_Qlm_5() {
-        return OpenAiChatModel.builder()
+    @Bean
+    public StreamingChatModel streamingChatModel() {
+        return OpenAiStreamingChatModel.builder()
                 .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
                 .apiKey(bailianApiKey)
-                .modelName("glm-5")
+                .modelName("qwen3.5-plus")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
-                .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
-                .strictJsonSchema(true)
                 .logRequests(true)
                 .logResponses(true)
                 .build();
+    }
+
+    @Bean
+    public ScoringModel scoringModel() {
+        return new BailianScoringModel("qwen3-rerank", 5, null);
     }
 
     @Bean("deepSeek_v4_pro")
@@ -99,7 +101,7 @@ public class AppConfig {
     }
 
     @Bean("opencode_go_qwen3.7_max")
-    public AnthropicChatModel anthropicChatModel_OpenCode_Go_Qwen3_7_Max() {
+    public AnthropicChatModel anthropicChatModel_OpenCode_Go_Qwen_3_7_Max() {
         return AnthropicChatModel.builder()
                 .baseUrl("https://opencode.ai/zen/go/v1")
                 .apiKey(openCodeApiKey)
@@ -111,14 +113,16 @@ public class AppConfig {
                 .build();
     }
 
-    @Bean
-    public StreamingChatModel streamingChatModel() {
-        return OpenAiStreamingChatModel.builder()
-                .baseUrl("https://coding.dashscope.aliyuncs.com/v1")
-                .apiKey(bailianApiKey)
-                .modelName("qwen3.5-plus")
+    @Bean("opencode_go_glm_5.1")
+    public OpenAiChatModel openAiChatModel_opencode_go_Qlm_5_1() {
+        return OpenAiChatModel.builder()
+                .baseUrl("https://opencode.ai/zen/go/v1")
+                .apiKey(openCodeApiKey)
+                .modelName("glm-5.1")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
+                .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
+                .strictJsonSchema(true)
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -203,10 +207,5 @@ public class AppConfig {
     @Bean
     public EmbeddingModel embeddingModel() {
         return new BgeSmallZhV15QuantizedEmbeddingModel();
-    }
-
-    @Bean
-    public ScoringModel scoringModel() {
-        return new BailianScoringModel("qwen3-rerank", 5, null);
     }
 }
