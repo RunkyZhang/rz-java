@@ -7,46 +7,49 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ToolsSelector {
+    // 一个执行者里面有多个工具
     private final Map<String, ToolSpecification> toolSpecifications = new HashMap<>();
-    private final Map<String, Object> tools = new HashMap<>();
+    private final Map<String, Object> executors = new HashMap<>();
 
     @Resource
     private WcImTools wcImTools;
     @Resource
-    private WriteArticleAgent writeArticleAgent;
+    private WriteArticleTools writeArticleTools;
     @Resource
-    private FormatAddressAgent formatAddressAgent;
+    private FormatAddressTools formatAddressTools;
 
     @PostConstruct
     private void init() {
         putTools(ToolSpecifications.toolSpecificationsFrom(wcImTools), wcImTools);
-        putTools(ToolSpecifications.toolSpecificationsFrom(writeArticleAgent), writeArticleAgent);
-        putTools(ToolSpecifications.toolSpecificationsFrom(formatAddressAgent), formatAddressAgent);
+        putTools(ToolSpecifications.toolSpecificationsFrom(writeArticleTools), writeArticleTools);
+        putTools(ToolSpecifications.toolSpecificationsFrom(formatAddressTools), formatAddressTools);
     }
 
-    public Object getTool(String name) {
-        return tools.get(name);
+    public Object getExecutor(String name) {
+        return executors.get(name);
+    }
+
+    public Set<Object> getExecutors() {
+        // 一个执行者里面有多个工具，所以需要set去重
+        return new HashSet<>(executors.values());
     }
 
     public List<ToolSpecification> getToolSpecifications() {
         return new ArrayList<>(toolSpecifications.values());
     }
 
-    private void putTools(List<ToolSpecification> toolSpecifications, Object tools) {
+    private void putTools(List<ToolSpecification> toolSpecifications, Object executor) {
         if (CollectionUtils.isEmpty(toolSpecifications)) {
             return;
         }
 
         for (ToolSpecification toolSpecification : toolSpecifications) {
             this.toolSpecifications.put(toolSpecification.name(), toolSpecification);
-            this.tools.put(toolSpecification.name(), tools);
+            this.executors.put(toolSpecification.name(), executor);
         }
     }
 }

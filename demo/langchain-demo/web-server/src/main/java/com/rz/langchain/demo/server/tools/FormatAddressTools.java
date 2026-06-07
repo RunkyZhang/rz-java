@@ -24,7 +24,7 @@ import java.util.List;
 import static dev.langchain4j.model.chat.request.ResponseFormatType.JSON;
 
 @Service
-public class FormatAddressAgent {
+public class FormatAddressTools {
     public static final String SYSTEM_PROMPT = """
             你是一个AI地址格式化Agent，最擅长的是把一段包含省市区，姓名，电话等信息的字符串格式化成指定json字符串
             EXAMPLE JSON OUTPUT（返回的json完全遵循以下格式）：
@@ -40,7 +40,7 @@ public class FormatAddressAgent {
             }
             """;
 
-    @Resource(name = "deepSeek_v4_flash")
+    @Resource(name = "volcengine_doubao_seed_2.0_pro")
     private OpenAiChatModel openAiChatModel;
     private ResponseFormat responseFormat;
 

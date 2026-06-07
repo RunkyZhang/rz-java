@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.rz.langchain.demo.server;
+package com.rz.langchain.demo.server.controller;
 
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
+import com.rz.langchain.demo.server.JacksonHelper;
+import com.rz.langchain.demo.server.agent.ChatMasterAgent;
+import com.rz.langchain.demo.server.agent.FormatAddressAgent;
+import com.rz.langchain.demo.server.agent.LocalAgent;
 import com.rz.langchain.demo.server.dto.*;
 import com.rz.langchain.demo.server.mapper.EmbeddingMetadataMapper;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
-import com.rz.langchain.demo.server.tools.FormatAddressAgent;
+import com.rz.langchain.demo.server.tools.FormatAddressTools;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -47,6 +51,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.scoring.ScoringModel;
+import dev.langchain4j.service.Result;
 import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.store.embedding.*;
@@ -108,8 +113,35 @@ public class BasicController {
     private EmbeddingMetadataMapper embeddingMetadataMapper;
     @Resource
     private ResourceLoader resourceLoader;
+    @Resource
+    private ChatMasterAgent chatMasterAgent;
+    @Resource
+    private FormatAddressAgent formatAddressAgent;
+    @Resource
+    private LocalAgent localAgent;
 
     // TODO：session隔离查看代码 /customerSupportAgent
+
+    @PostMapping("/chatEx")
+    @ResponseBody
+    public String chat(@RequestBody ChatMessagesDto requestDto) {
+        // chatMasterAgent.chat(requestDto.getMessage())
+
+//        boolean isSayHello = localAgent.isSayHello(requestDto.getMessage());
+//        System.out.println(isSayHello);
+//
+//        AddressDto addressDto = formatAddressAgent.format(requestDto.getMessage());
+//        System.out.println(addressDto);
+
+        Content messageContent = TextContent.from(requestDto.getMessage());
+        UserMessage userMessage = UserMessage.from(messageContent);
+        Result<String> result = chatMasterAgent.chat(userMessage);
+
+        return result.content();
+//        boolean isSayHello = chatMasterAgent.isSayHello(requestDto.getMessage());
+//
+//        return isSayHello ? "欢迎来到智能客服系统" : "...";
+    }
 
     // http://localhost:8080/hello?value=介绍一下你自己
     @GetMapping("/hello")
@@ -141,7 +173,7 @@ public class BasicController {
     // http://localhost:8080/index.html
     @PostMapping("/chat")
     @ResponseBody
-    public String chat(@RequestBody ChatMessagesDto requestDto) {
+    public String chatWithNative(@RequestBody ChatMessagesDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
         Assert.hasText(requestDto.getMessage(), "Assert.hasText: requestDto.getMessage()");
 
@@ -209,7 +241,7 @@ public class BasicController {
             }
 
             for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
-                Object tools = toolsSelector.getTool(toolExecutionRequest.name());
+                Object tools = toolsSelector.getExecutor(toolExecutionRequest.name());
                 if (null == tools) {
                     continue;
                 }
@@ -391,7 +423,7 @@ public class BasicController {
         }
 
         for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
-            Object tools = toolsSelector.getTool(toolExecutionRequest.name());
+            Object tools = toolsSelector.getExecutor(toolExecutionRequest.name());
             if (null == tools) {
                 continue;
             }
@@ -411,7 +443,7 @@ public class BasicController {
     private String getAnswerWithJson(String message) {
         List<ChatMessage> chatMessages = new ArrayList<>();
         ChatMessage userMessage = UserMessage.from(message);
-        ChatMessage systemMessage = UserMessage.from(FormatAddressAgent.SYSTEM_PROMPT);
+        ChatMessage systemMessage = UserMessage.from(FormatAddressTools.SYSTEM_PROMPT);
         chatMessages.add(systemMessage);
         chatMessages.add(userMessage);
         ChatRequest chatRequest = ChatRequest.builder()

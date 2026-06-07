@@ -15,7 +15,7 @@ import java.util.List;
 
 // 创建一个AI作家。把AI Agent包装成一个工具。实现多Agent之间最简单交互
 @Service
-public class WriteArticleAgent {
+public class WriteArticleTools {
     @Resource(name = "deepSeek_v4_pro")
     private OpenAiChatModel openAiChatModel;
 

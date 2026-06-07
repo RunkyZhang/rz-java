@@ -1,6 +1,10 @@
 package com.rz.langchain.demo.server;
 
+import com.rz.langchain.demo.server.agent.ChatMasterAgent;
+import com.rz.langchain.demo.server.agent.FormatAddressAgent;
+import com.rz.langchain.demo.server.agent.LocalAgent;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
+import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
@@ -13,12 +17,14 @@ import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15Quantize
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.scoring.ScoringModel;
+import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.chroma.ChromaApiVersion;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +43,27 @@ public class AppConfig {
     public String volcengineApiKey;
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
+
+    @Bean
+    public ChatMasterAgent chatMasterAgent(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
+                                           ChatMemory chatMemory,
+                                           ToolsSelector toolsSelector) {
+        return AiServices.builder(ChatMasterAgent.class)
+                .chatModel(model)
+                .tools(toolsSelector.getExecutors())
+                .chatMemory(chatMemory)
+                .build();
+    }
+
+    @Bean
+    public FormatAddressAgent formatAddressAgent(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model) {
+        return AiServices.create(FormatAddressAgent.class, model);
+    }
+
+    @Bean
+    public LocalAgent localAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AiServices.create(LocalAgent.class, model);
+    }
 
     // http debug：SyncRequestExecutor
     @Bean("qwen_3_5_plus")
@@ -88,15 +115,13 @@ public class AppConfig {
     }
 
     @Bean("deepSeek_v4_flash")
-    public OpenAiChatModel openAiChatModel_DeepSeek_v4_flash() {
-        return OpenAiChatModel.builder()
-                .baseUrl("https://api.deepseek.com")
+    public AnthropicChatModel anthropicChatModel_DeepSeek_v4_flash() {
+        return AnthropicChatModel.builder()
+                .baseUrl("https://api.deepseek.com/anthropic")
                 .apiKey(deepseekApiKey)
                 .modelName("deepseek-v4-flash")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
-                .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
-                .strictJsonSchema(true)
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -154,7 +179,7 @@ public class AppConfig {
         // memoryId: 一般被设计为sessionId
         return MessageWindowChatMemory.builder()
                 .id(1111)
-                .maxMessages(50)
+                .maxMessages(25)
                 .chatMemoryStore(new InMemoryChatMemoryStore())
                 .build();
     }
