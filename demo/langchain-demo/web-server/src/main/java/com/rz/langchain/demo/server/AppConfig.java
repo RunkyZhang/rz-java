@@ -3,6 +3,8 @@ package com.rz.langchain.demo.server;
 import com.rz.langchain.demo.server.agent.ChatMasterAgent;
 import com.rz.langchain.demo.server.agent.FormatAddressAgent;
 import com.rz.langchain.demo.server.agent.LocalAgent;
+import com.rz.langchain.demo.server.filter.Filter4UserMessage;
+import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -18,9 +20,20 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15QuantizedEmbeddingModel;
+import dev.langchain4j.model.input.PromptTemplate;
+import dev.langchain4j.model.moderation.ModerationModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiModerationModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.scoring.ScoringModel;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.aggregator.ContentAggregator;
+import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
+import dev.langchain4j.rag.content.injector.ContentInjector;
+import dev.langchain4j.rag.content.injector.DefaultContentInjector;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
@@ -56,14 +69,19 @@ public class AppConfig {
                                            @Qualifier("chatMemory-default") ChatMemory chatMemory,
                                            ChatMemoryProvider chatMemoryProvider,
                                            ToolsSelector toolsSelector,
-                                           BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer) {
+                                           BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer,
+                                           ModerationModel moderationModel,
+                                           EmbeddingStoreContentRetriever embeddingStoreContentRetriever,
+                                           RetrievalAugmentor retrievalAugmentor) {
         return AiServices.builder(ChatMasterAgent.class)
                 .chatModel(model)
                 .tools(toolsSelector.getExecutors())
                 .chatMemory(chatMemory)
                 .chatMemoryProvider(chatMemoryProvider)
                 .chatRequestTransformer(chatRequestTransformer)
-                // .moderationModel()
+                .moderationModel(moderationModel) // 貌似没生效
+                // .contentRetriever(embeddingStoreContentRetriever)
+                .retrievalAugmentor(retrievalAugmentor)
                 .build();
     }
 
@@ -133,6 +151,18 @@ public class AppConfig {
                 .apiKey(deepseekApiKey)
                 .modelName("deepseek-v4-flash")
                 .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean
+    public ModerationModel moderationModel() {
+        return OpenAiModerationModel.builder()
+                .baseUrl("https://api.deepseek.com")
+                .apiKey(deepseekApiKey)
+                .modelName("deepseek-v4-flash")
                 .timeout(Duration.ofSeconds(300))
                 .logRequests(true)
                 .logResponses(true)
@@ -278,12 +308,79 @@ public class AppConfig {
     }
 
     @Bean
+    public EmbeddingStoreContentRetriever embeddingStoreContentRetriever(ChromaEmbeddingStore chromaEmbeddingStore,
+                                                                         EmbeddingModel embeddingModel,
+                                                                         FilterMapper filterMapper) {
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(chromaEmbeddingStore)
+                .embeddingModel(embeddingModel)
+                .maxResults(10)
+                .minScore(0.5)
+                .displayName("chroma")
+                .dynamicMaxResults(query -> {
+                    System.out.println(query);
+                    return 10;
+                })
+                .dynamicMinScore(query -> {
+                    System.out.println(query);
+                    return 0.5;
+                }).dynamicFilter(query -> {
+                    if (!(query.metadata().chatMessage() instanceof UserMessage userMessage)) {
+                        return null;
+                    }
+
+                    Filter4UserMessage filter4UserMessage = filterMapper.get(userMessage.name());
+                    if (null == filter4UserMessage) {
+                        return null;
+                    }
+
+                    filter4UserMessage.setUsed(true);
+                    return filter4UserMessage.getFilter();
+                })
+                .build();
+    }
+
+    @Bean
+    public ContentAggregator contentAggregator(ScoringModel scoringModel) {
+        return ReRankingContentAggregator.builder()
+                .scoringModel(scoringModel)
+                // .querySelector() TODO: 待了解
+                .minScore(0.5)
+                .build();
+    }
+
+    // 默认内容注入器（Default Content Injector）
+    // DefaultContentInjector 是 ContentInjector 的默认实现，它只是简单地修改text
+    // {{userMessage}}：是用户消息
+    // {{contents}}：是RAG内容（并带有前缀 Answer using the following information: ）
+    // 如果删除{{userMessage}}和{{contents}}都会缺失对应内容
+    @Bean
+    public ContentInjector contentInjector() {
+        return DefaultContentInjector.builder()
+                .promptTemplate(PromptTemplate.from("{{userMessage}}\n{{contents}}\n你的回答要用以下文字结尾(注意换行)：吼吼\uD83D\uDC81\uD83D\uDC81\uD83D\uDC81"))
+                .build();
+    }
+
+    @Bean
+    public RetrievalAugmentor retrievalAugmentor(EmbeddingStoreContentRetriever embeddingStoreContentRetriever,
+                                                 ContentAggregator contentAggregator,
+                                                 ContentInjector contentInjector) {
+        return DefaultRetrievalAugmentor.builder()
+                .contentRetriever(embeddingStoreContentRetriever) // retrieve
+                .contentAggregator(contentAggregator) // rerank
+                //.queryTransformer() 用来重新包装Query对象
+                //.queryRouter() 用来塞选多个contentRetriever中的哪几个contentRetriever。默认使用DefaultQueryRouter返回全部contentRetriever
+                .contentInjector(contentInjector)
+                .build();
+    }
+
+    @Bean
     public BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer() {
         return (chatRequest, memoryId) -> {
             System.out.println(memoryId);
 
             List<ChatMessage> chatMessages = new ArrayList<>(chatRequest.messages());
-            UserMessage userMessage = UserMessage.from("你的回答要以后面的文字开头(注意换行)：吼吼\uD83D\uDE47\uD83D\uDE47\uD83D\uDE47\n");
+            UserMessage userMessage = UserMessage.from("你的回答要用以下文字开头(注意换行)：吼吼\uD83D\uDE47\uD83D\uDE47\uD83D\uDE47\n");
             chatMessages.add(userMessage);
 
             ChatRequest.Builder chatRequestBuilder = cloneChatRequest(chatRequest);

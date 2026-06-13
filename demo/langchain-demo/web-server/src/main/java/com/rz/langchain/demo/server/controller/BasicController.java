@@ -23,6 +23,7 @@ import com.rz.langchain.demo.server.agent.ChatMasterAgent;
 import com.rz.langchain.demo.server.agent.FormatAddressAgent;
 import com.rz.langchain.demo.server.agent.LocalAgent;
 import com.rz.langchain.demo.server.dto.*;
+import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.mapper.EmbeddingMetadataMapper;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.FormatAddressTools;
@@ -119,6 +120,8 @@ public class BasicController {
     private FormatAddressAgent formatAddressAgent;
     @Resource
     private LocalAgent localAgent;
+    @Resource
+    private FilterMapper filterMapper;
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
@@ -134,9 +137,19 @@ public class BasicController {
 //        System.out.println(addressDto);
 
         Content messageContent = TextContent.from(requestDto.getMessage());
-        UserMessage userMessage = UserMessage.from(messageContent);
+        String userMessageName = UUID.randomUUID().toString();
+        UserMessage userMessage = UserMessage.from(userMessageName, messageContent);
+        if (null == requestDto.getDocumentName()) {
+            // 不想等。不走RAG。但是还是回去查一次向量数据库。蛋疼
+            Filter filter = MetadataFilterBuilder.metadataKey(userMessageName).isEqualTo(userMessageName);
+            filterMapper.add(userMessageName, filter);
+        } else if (!"all".equals(requestDto.getDocumentName())) {
+            Filter filter = MetadataFilterBuilder.metadataKey("name").isEqualTo(requestDto.getDocumentName());
+            filterMapper.add(userMessageName, filter);
+        }
+
         // memoryId可以设计为用户id+sessionId
-        Result<String> result = chatMasterAgent.chat(1111, userMessage);
+        Result<String> result = chatMasterAgent.chat(1111, userMessageName, userMessage);
         // Result<String> resultDemo = chatMasterAgent.chatDemo(requestDto.getMessage());
 
         return result.content();

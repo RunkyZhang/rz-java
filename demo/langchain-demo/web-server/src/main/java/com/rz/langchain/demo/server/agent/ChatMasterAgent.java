@@ -4,7 +4,8 @@ import dev.langchain4j.service.*;
 
 
 public interface ChatMasterAgent {
-    // 这个会使用AiServices.chatMemoryProvider()中的TODO
+    // 这个会使用AiServices.chatMemoryProvider()
+    // 使用@UserName String userMessageName来代替messageId
     @SystemMessage("""
             你是一个AI助手，更确切的说你是一个智能体。
             1. 能够回答问题；
@@ -12,7 +13,7 @@ public interface ChatMasterAgent {
             3. 查询RAG知识库并总结输出；
             4. 你是多个ai agent中的master，负责调用，协调，编排其他ai agent。
             """)
-    Result<String> chat(@MemoryId Object memoryId, @UserMessage dev.langchain4j.data.message.UserMessage userMessage);
+    Result<String> chat(@MemoryId Object memoryId, @UserName String userMessageName, @UserMessage dev.langchain4j.data.message.UserMessage userMessage);
 
     // 这个会使用AiServices.chatMemory()中的chatMemory。memoryId永远是“default”当在chatRequestTransformer获取
     @SystemMessage("""
