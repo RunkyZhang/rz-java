@@ -95,7 +95,7 @@ public class BasicController {
     private AnthropicChatModel anthropicChatModel;
     @Resource
     private StreamingChatModel streamingChatModel;
-    @Resource
+    @Resource(name = "chatMemory-default")
     private ChatMemory chatMemory;
     @Resource
     private ToolsSelector toolsSelector;
@@ -122,7 +122,7 @@ public class BasicController {
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
-    @PostMapping("/chatEx")
+    @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
         // chatMasterAgent.chat(requestDto.getMessage())
@@ -135,7 +135,9 @@ public class BasicController {
 
         Content messageContent = TextContent.from(requestDto.getMessage());
         UserMessage userMessage = UserMessage.from(messageContent);
-        Result<String> result = chatMasterAgent.chat(userMessage);
+        // memoryId可以设计为用户id+sessionId
+        Result<String> result = chatMasterAgent.chat(1111, userMessage);
+        // Result<String> resultDemo = chatMasterAgent.chatDemo(requestDto.getMessage());
 
         return result.content();
 //        boolean isSayHello = chatMasterAgent.isSayHello(requestDto.getMessage());
@@ -171,7 +173,7 @@ public class BasicController {
     // 测试：给00545579发一条企业微信消息，内容是【厉害呀】
     // 测试：先帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情。然后把短文内容通过企业微信发给00545579
     // http://localhost:8080/index.html
-    @PostMapping("/chat")
+    @PostMapping("/chatEX")
     @ResponseBody
     public String chatWithNative(@RequestBody ChatMessagesDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");

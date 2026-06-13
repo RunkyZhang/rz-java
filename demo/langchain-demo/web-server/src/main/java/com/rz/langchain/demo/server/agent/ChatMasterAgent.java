@@ -1,20 +1,28 @@
 package com.rz.langchain.demo.server.agent;
 
-import dev.langchain4j.service.Result;
-import dev.langchain4j.service.SystemMessage;
-import dev.langchain4j.service.UserMessage;
-import dev.langchain4j.service.V;
+import dev.langchain4j.service.*;
 
 
 public interface ChatMasterAgent {
+    // 这个会使用AiServices.chatMemoryProvider()中的TODO
     @SystemMessage("""
-        你是一个AI助手，更确切的说你是一个智能体。
-        1. 能够回答问题；
-        2. 调用本地工具；
-        3. 查询RAG知识库并总结输出；
-        4. 你是多个ai agent中的master，负责调用，协调，编排其他ai agent。
-        """)
-    Result<String> chat(dev.langchain4j.data.message.UserMessage userMessage);
+            你是一个AI助手，更确切的说你是一个智能体。
+            1. 能够回答问题；
+            2. 调用本地工具；
+            3. 查询RAG知识库并总结输出；
+            4. 你是多个ai agent中的master，负责调用，协调，编排其他ai agent。
+            """)
+    Result<String> chat(@MemoryId Object memoryId, @UserMessage dev.langchain4j.data.message.UserMessage userMessage);
+
+    // 这个会使用AiServices.chatMemory()中的chatMemory。memoryId永远是“default”当在chatRequestTransformer获取
+    @SystemMessage("""
+            你是一个AI助手，更确切的说你是一个智能体。
+            1. 能够回答问题；
+            2. 调用本地工具；
+            3. 查询RAG知识库并总结输出；
+            4. 你是多个ai agent中的master，负责调用，协调，编排其他ai agent。
+            """)
+    Result<String> chatDemo(String userMessage);
 
     @UserMessage("""
             这是知识库查询结果的json数据：

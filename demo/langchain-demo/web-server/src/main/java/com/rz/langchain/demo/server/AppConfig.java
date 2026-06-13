@@ -6,12 +6,16 @@ import com.rz.langchain.demo.server.agent.LocalAgent;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.Capability;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15QuantizedEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -30,6 +34,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
 
 @Configuration
 public class AppConfig {
@@ -46,12 +53,17 @@ public class AppConfig {
 
     @Bean
     public ChatMasterAgent chatMasterAgent(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
-                                           ChatMemory chatMemory,
-                                           ToolsSelector toolsSelector) {
+                                           @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                                           ChatMemoryProvider chatMemoryProvider,
+                                           ToolsSelector toolsSelector,
+                                           BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer) {
         return AiServices.builder(ChatMasterAgent.class)
                 .chatModel(model)
                 .tools(toolsSelector.getExecutors())
                 .chatMemory(chatMemory)
+                .chatMemoryProvider(chatMemoryProvider)
+                .chatRequestTransformer(chatRequestTransformer)
+                // .moderationModel()
                 .build();
     }
 
@@ -174,11 +186,21 @@ public class AppConfig {
                 .build();
     }
 
-    @Bean
-    public ChatMemory ChatMemory() {
+    @Bean("chatMemory-1111")
+    public ChatMemory chatMemory1111() {
         // memoryId: 一般被设计为sessionId
         return MessageWindowChatMemory.builder()
                 .id(1111)
+                .maxMessages(10)
+                .chatMemoryStore(new InMemoryChatMemoryStore())
+                .build();
+    }
+
+    @Bean("chatMemory-default")
+    public ChatMemory chatMemoryDefault() {
+        // memoryId: 一般被设计为sessionId
+        return MessageWindowChatMemory.builder()
+                .id("runky-default")
                 .maxMessages(25)
                 .chatMemoryStore(new InMemoryChatMemoryStore())
                 .build();
@@ -253,5 +275,53 @@ public class AppConfig {
     @Bean
     public EmbeddingModel embeddingModel() {
         return new BgeSmallZhV15QuantizedEmbeddingModel();
+    }
+
+    @Bean
+    public BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer() {
+        return (chatRequest, memoryId) -> {
+            System.out.println(memoryId);
+
+            List<ChatMessage> chatMessages = new ArrayList<>(chatRequest.messages());
+            UserMessage userMessage = UserMessage.from("你的回答要以后面的文字开头(注意换行)：吼吼\uD83D\uDE47\uD83D\uDE47\uD83D\uDE47\n");
+            chatMessages.add(userMessage);
+
+            ChatRequest.Builder chatRequestBuilder = cloneChatRequest(chatRequest);
+            chatRequestBuilder.messages(chatMessages);
+
+            return chatRequestBuilder.build();
+        };
+    }
+
+    @Bean
+    public ChatMemoryProvider chatMemoryProvider(@Qualifier("chatMemory-1111") ChatMemory chatMemory1111,
+                                                 @Qualifier("chatMemory-default") ChatMemory chatMemoryDefault) {
+        return memoryId -> {
+            if (chatMemory1111.id().equals(memoryId)) {
+                return chatMemory1111;
+            } else {
+                return chatMemoryDefault;
+            }
+        };
+    }
+
+    private ChatRequest.Builder cloneChatRequest(ChatRequest chatRequest) {
+        if (null == chatRequest) {
+            return null;
+        }
+
+        return ChatRequest.builder()
+                .messages(chatRequest.messages())
+                .modelName(chatRequest.modelName())
+                .temperature(chatRequest.temperature())
+                .topP(chatRequest.topP())
+                .topK(chatRequest.topK())
+                .frequencyPenalty(chatRequest.frequencyPenalty())
+                .presencePenalty(chatRequest.presencePenalty())
+                .maxOutputTokens(chatRequest.maxOutputTokens())
+                .stopSequences(chatRequest.stopSequences())
+                .toolSpecifications(chatRequest.toolSpecifications())
+                .toolChoice(chatRequest.toolChoice())
+                .responseFormat(chatRequest.responseFormat());
     }
 }
