@@ -1,5 +1,8 @@
 package com.rz.langchain.demo.server;
 
+import com.rz.langchain.demo.server.agent.FarthestDistanceReadAgent;
+import com.rz.langchain.demo.server.agent.SequenceMasterAgent;
+import com.rz.langchain.demo.server.agent.ToolsAgent;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
@@ -7,6 +10,7 @@ import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
+import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -40,6 +44,7 @@ import dev.langchain4j.store.embedding.chroma.ChromaApiVersion;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +69,35 @@ public class AppConfig {
     private boolean withInMemoryEmbeddingStore;
 
     @Bean
+    public SequenceMasterAgent sequenceMasterAgent(FarthestDistanceReadAgent farthestDistanceReadAgent, ToolsAgent toolsAgent) {
+        return AgenticServices
+                .sequenceBuilder(SequenceMasterAgent.class)
+                .subAgents(farthestDistanceReadAgent, toolsAgent)
+                .outputName("result")
+                .build();
+    }
+
+    @Bean
+    public FarthestDistanceReadAgent longestDistanceReadAgent(@Qualifier("opencode_go_glm_5.2") OpenAiChatModel model,
+                                                              RetrievalAugmentor retrievalAugmentor) {
+        return AgenticServices.agentBuilder(FarthestDistanceReadAgent.class)
+                .chatModel(model)
+                .retrievalAugmentor(retrievalAugmentor)
+                .outputName("message")
+                .build();
+    }
+
+    @Bean
+    public ToolsAgent toolsAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                                 ToolsSelector toolsSelector) {
+        return AgenticServices.agentBuilder(ToolsAgent.class)
+                .chatModel(model)
+                .tools(toolsSelector.getExecutors())
+                .outputName("message")
+                .build();
+    }
+
+    @Bean
     public ChatAssistant chatMasterAssistant(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
                                              @Qualifier("chatMemory-default") ChatMemory chatMemory,
                                              ChatMemoryProvider chatMemoryProvider,
@@ -79,7 +113,7 @@ public class AppConfig {
                 .chatMemoryProvider(chatMemoryProvider)
                 .chatRequestTransformer(chatRequestTransformer)
                 .moderationModel(moderationModel) // 貌似没生效
-                // .contentRetriever(embeddingStoreContentRetriever)
+                //.contentRetriever(embeddingStoreContentRetriever) // contentRetriever 和 retrievalAugmentor只能用一个
                 .retrievalAugmentor(retrievalAugmentor)
                 .build();
     }
@@ -187,6 +221,21 @@ public class AppConfig {
                 .baseUrl("https://opencode.ai/zen/go/v1")
                 .apiKey(openCodeApiKey)
                 .modelName("glm-5.1")
+                .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
+                .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
+                .strictJsonSchema(true)
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean("opencode_go_glm_5.2")
+    public OpenAiChatModel openAiChatModel_opencode_go_Qlm_5_2() {
+        return OpenAiChatModel.builder()
+                .baseUrl("https://opencode.ai/zen/go/v1")
+                .apiKey(openCodeApiKey)
+                .modelName("glm-5.2")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
                 .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
@@ -332,7 +381,9 @@ public class AppConfig {
                     if (!(query.metadata().chatMessage() instanceof UserMessage userMessage)) {
                         return null;
                     }
-
+                    if (StringUtils.isBlank(userMessage.name())) {
+                        return null;
+                    }
                     Filter4UserMessage filter4UserMessage = filterMapper.get(userMessage.name());
                     if (null == filter4UserMessage) {
                         return null;
