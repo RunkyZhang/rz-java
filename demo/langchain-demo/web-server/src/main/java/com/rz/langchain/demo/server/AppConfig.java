@@ -73,7 +73,7 @@ public class AppConfig {
         return AgenticServices
                 .sequenceBuilder(SequenceMasterAgent.class)
                 .subAgents(farthestDistanceReadAgent, toolsAgent)
-                .outputName("result")
+                .outputName("message")
                 .build();
     }
 
@@ -92,7 +92,7 @@ public class AppConfig {
                                  ToolsSelector toolsSelector) {
         return AgenticServices.agentBuilder(ToolsAgent.class)
                 .chatModel(model)
-                .tools(toolsSelector.getExecutors())
+                .tools(toolsSelector.getExecutors()) // 没生效 TODO：
                 .outputName("message")
                 .build();
     }
