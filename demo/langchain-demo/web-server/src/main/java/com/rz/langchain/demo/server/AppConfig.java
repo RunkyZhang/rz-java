@@ -1,8 +1,8 @@
 package com.rz.langchain.demo.server;
 
-import com.rz.langchain.demo.server.agent.ChatMasterAgent;
-import com.rz.langchain.demo.server.agent.FormatAddressAgent;
-import com.rz.langchain.demo.server.agent.LocalAgent;
+import com.rz.langchain.demo.server.assistant.ChatAssistant;
+import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
+import com.rz.langchain.demo.server.assistant.LocalAssistant;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
@@ -32,7 +32,6 @@ import dev.langchain4j.rag.content.aggregator.ContentAggregator;
 import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
 import dev.langchain4j.rag.content.injector.ContentInjector;
 import dev.langchain4j.rag.content.injector.DefaultContentInjector;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -65,15 +64,15 @@ public class AppConfig {
     private boolean withInMemoryEmbeddingStore;
 
     @Bean
-    public ChatMasterAgent chatMasterAgent(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
-                                           @Qualifier("chatMemory-default") ChatMemory chatMemory,
-                                           ChatMemoryProvider chatMemoryProvider,
-                                           ToolsSelector toolsSelector,
-                                           BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer,
-                                           ModerationModel moderationModel,
-                                           EmbeddingStoreContentRetriever embeddingStoreContentRetriever,
-                                           RetrievalAugmentor retrievalAugmentor) {
-        return AiServices.builder(ChatMasterAgent.class)
+    public ChatAssistant chatMasterAssistant(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
+                                             @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                                             ChatMemoryProvider chatMemoryProvider,
+                                             ToolsSelector toolsSelector,
+                                             BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer,
+                                             ModerationModel moderationModel,
+                                             EmbeddingStoreContentRetriever embeddingStoreContentRetriever,
+                                             RetrievalAugmentor retrievalAugmentor) {
+        return AiServices.builder(ChatAssistant.class)
                 .chatModel(model)
                 .tools(toolsSelector.getExecutors())
                 .chatMemory(chatMemory)
@@ -86,13 +85,13 @@ public class AppConfig {
     }
 
     @Bean
-    public FormatAddressAgent formatAddressAgent(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model) {
-        return AiServices.create(FormatAddressAgent.class, model);
+    public FormatAddressAssistant formatAddressAssistant(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model) {
+        return AiServices.create(FormatAddressAssistant.class, model);
     }
 
     @Bean
-    public LocalAgent localAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
-        return AiServices.create(LocalAgent.class, model);
+    public LocalAssistant localAssistant(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AiServices.create(LocalAssistant.class, model);
     }
 
     // http debug：SyncRequestExecutor
@@ -308,11 +307,16 @@ public class AppConfig {
     }
 
     @Bean
-    public EmbeddingStoreContentRetriever embeddingStoreContentRetriever(ChromaEmbeddingStore chromaEmbeddingStore,
-                                                                         EmbeddingModel embeddingModel,
-                                                                         FilterMapper filterMapper) {
+    public EmbeddingStoreContentRetriever embeddingStoreContentRetriever(
+            InMemoryEmbeddingStore<TextSegment> inMemoryEmbeddingStore,
+            ChromaEmbeddingStore chromaEmbeddingStore,
+            EmbeddingModel embeddingModel,
+            FilterMapper filterMapper) {
+
+        EmbeddingStore<TextSegment> embeddingStore = withInMemoryEmbeddingStore ? inMemoryEmbeddingStore : chromaEmbeddingStore;
+
         return EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(chromaEmbeddingStore)
+                .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .maxResults(10)
                 .minScore(0.5)
@@ -390,6 +394,7 @@ public class AppConfig {
         };
     }
 
+    // 可动态new一个ChatMemory，可指定哪个ChatMemory，也默认使用chatMemory-default
     @Bean
     public ChatMemoryProvider chatMemoryProvider(@Qualifier("chatMemory-1111") ChatMemory chatMemory1111,
                                                  @Qualifier("chatMemory-default") ChatMemory chatMemoryDefault) {

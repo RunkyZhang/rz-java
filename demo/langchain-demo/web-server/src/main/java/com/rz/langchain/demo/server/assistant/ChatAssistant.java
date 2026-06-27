@@ -1,9 +1,9 @@
-package com.rz.langchain.demo.server.agent;
+package com.rz.langchain.demo.server.assistant;
 
 import dev.langchain4j.service.*;
 
 
-public interface ChatMasterAgent {
+public interface ChatAssistant {
     // 这个会使用AiServices.chatMemoryProvider()
     // 使用@UserName String userMessageName来代替messageId
     @SystemMessage("""

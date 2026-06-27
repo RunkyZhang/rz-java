@@ -6,6 +6,11 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+// 由于langchain4j架构设计缺陷。无法在每次聊天交互时，将特定参数（例如：是否使用知识库，或使用哪个知识库）传给到AiService创建的Assistant的EmbeddingStoreContentRetriever的dynamicFilter中
+// 故只能使用FilterMapper作为媒介进行存储传递。
+// 如果生产使用需要管控内存占用，清理filter4UserMessages
+// 不知道后续langchain4j是否能升级
 @Service
 public class FilterMapper {
     private final Map<String, Filter4UserMessage> filter4UserMessages = new ConcurrentHashMap<>();

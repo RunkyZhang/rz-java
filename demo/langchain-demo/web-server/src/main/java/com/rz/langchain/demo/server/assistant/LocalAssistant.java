@@ -1,8 +1,8 @@
-package com.rz.langchain.demo.server.agent;
+package com.rz.langchain.demo.server.assistant;
 
 import dev.langchain4j.service.UserMessage;
 
-public interface LocalAgent {
+public interface LocalAssistant {
     @UserMessage("""
             判断下面这句话是用户是在打招呼吗？
             ====

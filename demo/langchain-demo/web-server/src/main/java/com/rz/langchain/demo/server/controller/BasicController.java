@@ -19,9 +19,9 @@ package com.rz.langchain.demo.server.controller;
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
 import com.rz.langchain.demo.server.JacksonHelper;
-import com.rz.langchain.demo.server.agent.ChatMasterAgent;
-import com.rz.langchain.demo.server.agent.FormatAddressAgent;
-import com.rz.langchain.demo.server.agent.LocalAgent;
+import com.rz.langchain.demo.server.assistant.ChatAssistant;
+import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
+import com.rz.langchain.demo.server.assistant.LocalAssistant;
 import com.rz.langchain.demo.server.dto.*;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.mapper.EmbeddingMetadataMapper;
@@ -115,16 +115,20 @@ public class BasicController {
     @Resource
     private ResourceLoader resourceLoader;
     @Resource
-    private ChatMasterAgent chatMasterAgent;
+    private ChatAssistant chatAssistant;
     @Resource
-    private FormatAddressAgent formatAddressAgent;
+    private FormatAddressAssistant formatAddressAssistant;
     @Resource
-    private LocalAgent localAgent;
+    private LocalAssistant localAssistant;
     @Resource
     private FilterMapper filterMapper;
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
+    // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
+    // 测试：帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情？
+    // 测试：帮我发一条微企业微信消息给张仁杰，内容是建议他中午在上海复地活力城买点什么好吃的回家
+    // 测试：快递请邮寄到上海市浦东新区陆家嘴环路1000号恒生银行大厦18层，13688889999王五先生收就好了。电话记得要脱敏，如果人没接电话那么就把快递请放前台，勿打电话
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
@@ -149,7 +153,7 @@ public class BasicController {
         }
 
         // memoryId可以设计为用户id+sessionId
-        Result<String> result = chatMasterAgent.chat(1111, userMessageName, userMessage);
+        Result<String> result = chatAssistant.chat(1111, userMessageName, userMessage);
         // Result<String> resultDemo = chatMasterAgent.chatDemo(requestDto.getMessage());
 
         return result.content();
