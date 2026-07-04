@@ -2,6 +2,7 @@ package com.rz.langchain.demo.server;
 
 import com.rz.langchain.demo.server.agent.FarthestDistanceReadAgent;
 import com.rz.langchain.demo.server.agent.SequenceMasterAgent;
+import com.rz.langchain.demo.server.agent.TableFormatAgent;
 import com.rz.langchain.demo.server.agent.ToolsAgent;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
@@ -69,17 +70,18 @@ public class AppConfig {
     private boolean withInMemoryEmbeddingStore;
 
     @Bean
-    public SequenceMasterAgent sequenceMasterAgent(FarthestDistanceReadAgent farthestDistanceReadAgent, ToolsAgent toolsAgent) {
+    public SequenceMasterAgent sequenceMasterAgent(FarthestDistanceReadAgent farthestDistanceReadAgent,
+                                                   TableFormatAgent tableFormatAgent) {
         return AgenticServices
                 .sequenceBuilder(SequenceMasterAgent.class)
-                .subAgents(farthestDistanceReadAgent, toolsAgent)
+                .subAgents(farthestDistanceReadAgent, tableFormatAgent)
                 .outputName("message")
                 .build();
     }
 
     @Bean
-    public FarthestDistanceReadAgent longestDistanceReadAgent(@Qualifier("opencode_go_glm_5.2") OpenAiChatModel model,
-                                                              RetrievalAugmentor retrievalAugmentor) {
+    public FarthestDistanceReadAgent farthestDistanceReadAgent(@Qualifier("opencode_go_glm_5.2") OpenAiChatModel model,
+                                                               RetrievalAugmentor retrievalAugmentor) {
         return AgenticServices.agentBuilder(FarthestDistanceReadAgent.class)
                 .chatModel(model)
                 .retrievalAugmentor(retrievalAugmentor)
@@ -87,6 +89,15 @@ public class AppConfig {
                 .build();
     }
 
+    @Bean
+    public TableFormatAgent tableFormatAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(TableFormatAgent.class)
+                .chatModel(model)
+                .outputName("message")
+                .build();
+    }
+
+    // 工具不生效，不知道是不是需要升级版本
     @Bean
     public ToolsAgent toolsAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
                                  ToolsSelector toolsSelector) {

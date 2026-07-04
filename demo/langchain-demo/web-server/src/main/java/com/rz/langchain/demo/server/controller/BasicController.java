@@ -132,7 +132,8 @@ public class BasicController {
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
-    // 测试：《最远的距离》小说中涉及到哪些地址，帮我把这些地址格式化后，企业微信发给张仁杰
+    // 测试sequenceMasterAgent(会生成树)：《最远的距离》小说中涉及到哪些地址
+    // 测试
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
@@ -512,11 +513,11 @@ public class BasicController {
         savedDocuments.put(txtDocument.metadata().getString("document_id"), toDocumentDto(txtDocument));
 
         // 短篇小说写作指南
-        Document pdfDocument = FileSystemDocumentLoader.loadDocument("/tmp/短篇小说写作指南.pdf", new ApachePdfBoxDocumentParser());
-        pdfDocument.metadata().put("document_id", UUID.randomUUID().toString());
-        pdfDocument.metadata().put("type", "技能");
-        pdfDocument.metadata().put("name", "短篇小说写作指南");
-        savedDocuments.put(pdfDocument.metadata().getString("document_id"), toDocumentDto(pdfDocument));
+//        Document pdfDocument = FileSystemDocumentLoader.loadDocument("/tmp/短篇小说写作指南.pdf", new ApachePdfBoxDocumentParser());
+//        pdfDocument.metadata().put("document_id", UUID.randomUUID().toString());
+//        pdfDocument.metadata().put("type", "技能");
+//        pdfDocument.metadata().put("name", "短篇小说写作指南");
+//        savedDocuments.put(pdfDocument.metadata().getString("document_id"), toDocumentDto(pdfDocument));
 
         // 3年、1万人，快手技术团队首次系统披露AI研发范式升级历程
         Document urlDocument = UrlDocumentLoader.load("https://news.qq.com/rain/a/20260209A03PA600", new TextDocumentParser());
@@ -533,7 +534,7 @@ public class BasicController {
         // ApacheTikaDocumentParser for default
 
         // 吸收，保存
-        embeddingStoreIngestor.ingest(txtDocument, pdfDocument, webDocument);
+        embeddingStoreIngestor.ingest(txtDocument, /*pdfDocument,*/webDocument);
 
         // format
         if (withInMemoryEmbeddingStore) {
