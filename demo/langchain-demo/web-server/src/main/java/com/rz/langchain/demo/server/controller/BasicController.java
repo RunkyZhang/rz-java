@@ -19,7 +19,8 @@ package com.rz.langchain.demo.server.controller;
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
 import com.rz.langchain.demo.server.JacksonHelper;
-import com.rz.langchain.demo.server.agent.SequenceMasterAgent;
+import com.rz.langchain.demo.server.agent.SimpleLoopAgent;
+import com.rz.langchain.demo.server.agent.SimpleSequenceAgent;
 import com.rz.langchain.demo.server.agent.ToolsAgent;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
@@ -33,10 +34,8 @@ import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import dev.langchain4j.data.document.loader.UrlDocumentLoader;
 import dev.langchain4j.data.document.parser.TextDocumentParser;
-import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
 import dev.langchain4j.data.document.transformer.jsoup.HtmlToTextDocumentTransformer;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.*;
@@ -125,19 +124,24 @@ public class BasicController {
     @Resource
     private FilterMapper filterMapper;
     @Resource
-    private SequenceMasterAgent sequenceMasterAgent;
+    private SimpleSequenceAgent simpleSequenceAgent;
     @Resource
     private ToolsAgent toolsAgent;
+    @Resource
+    private SimpleLoopAgent simpleLoopAgent;
 
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
-    // 测试sequenceMasterAgent(会生成树)：《最远的距离》小说中涉及到哪些地址
-    // 测试
+    // 测试SimpleSequenceAgent(会生成树)：《最远的距离》小说中涉及到哪些地址
+    // 测试SimpleLoopAgent
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
-        return sequenceMasterAgent.chat(requestDto.getMessage());
+        return simpleSequenceAgent.chat(requestDto.getMessage());
+
+
+        // return simpleLoopAgent.play("发牌阶段", );
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
@@ -162,7 +166,7 @@ public class BasicController {
             // 不想等。不走RAG。但是还是回去查一次向量数据库。蛋疼
             Filter filter = MetadataFilterBuilder.metadataKey(userMessageName).isEqualTo(userMessageName);
             filterMapper.add(userMessageName, filter);
-        } else if (!"all".equals(requestDto.getDocumentName())) {
+        } else if (!"all" .equals(requestDto.getDocumentName())) {
             Filter filter = MetadataFilterBuilder.metadataKey("name").isEqualTo(requestDto.getDocumentName());
             filterMapper.add(userMessageName, filter);
         }
@@ -580,11 +584,11 @@ public class BasicController {
         Filter filter = null;
         Filter typeFilter = MetadataFilterBuilder.metadataKey("type").isEqualTo(type);
         Filter nameFilter = MetadataFilterBuilder.metadataKey("name").isEqualTo(name);
-        if (!"all".equals(type) && !"all".equals(name)) {
+        if (!"all" .equals(type) && !"all" .equals(name)) {
             filter = Filter.and(typeFilter, nameFilter);
-        } else if (!"all".equals(type)) {
+        } else if (!"all" .equals(type)) {
             filter = typeFilter;
-        } else if (!"all".equals(name)) {
+        } else if (!"all" .equals(name)) {
             filter = nameFilter;
         }
         EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
@@ -694,11 +698,11 @@ public class BasicController {
                     continue;
                 }
 
-                if ("name".equals(embeddingMetadataEntity.getKey())) {
+                if ("name" .equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setName(embeddingMetadataEntity.getString_value());
-                } else if ("type".equals(embeddingMetadataEntity.getKey())) {
+                } else if ("type" .equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setType(embeddingMetadataEntity.getString_value());
-                } else if ("document_id".equals(embeddingMetadataEntity.getKey())) {
+                } else if ("document_id" .equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setId(embeddingMetadataEntity.getString_value());
                 }
             }

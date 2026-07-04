@@ -1,12 +1,10 @@
 package com.rz.langchain.demo.server;
 
-import com.rz.langchain.demo.server.agent.FarthestDistanceReadAgent;
-import com.rz.langchain.demo.server.agent.SequenceMasterAgent;
-import com.rz.langchain.demo.server.agent.TableFormatAgent;
-import com.rz.langchain.demo.server.agent.ToolsAgent;
+import com.rz.langchain.demo.server.agent.*;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
+import com.rz.langchain.demo.server.dto.PlayCardsDto;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
@@ -50,6 +48,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -70,17 +69,111 @@ public class AppConfig {
     private boolean withInMemoryEmbeddingStore;
 
     @Bean
-    public SequenceMasterAgent sequenceMasterAgent(FarthestDistanceReadAgent farthestDistanceReadAgent,
+    public SimpleLoopAgent simpleLoopAgent(AnshanPokerAgentA anshanPokerAgentA,
+                                           AnshanPokerAgentA anshanPokerAgentAB) {
+        return AgenticServices
+                .loopBuilder(SimpleLoopAgent.class)
+                .subAgents(anshanPokerAgentA, anshanPokerAgentAB)
+                .maxIterations(50)
+                .beforeCall(o -> {
+                    Object value = o.readState("index");
+                    int index = 0;
+                    if (null != value) {
+                        index = (Integer) value;
+                        index++;
+                    }
+                    o.writeState("index", index);
+                    if (0 < index) {
+                        o.writeState("state", "打牌阶段");
+                    }
+
+                    value = o.readState("playCardsInfoA");
+                    String playCardsDtoJsonA = null == value ? "" : value.toString();
+                    if (!StringUtils.isBlank(playCardsDtoJsonA)) {
+                        PlayCardsDto playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, false);
+                        if (null != playCardsDtoA) {
+                            if (!StringUtils.isBlank(playCardsDtoA.getGameStatus())) {
+                                o.writeState("gameStatusA", playCardsDtoA.getGameStatus());
+                            }
+                            if (!CollectionUtils.isEmpty(playCardsDtoA.getPlayCards())) {
+                                o.writeState("playCardsA", String.join(",", playCardsDtoA.getPlayCards()));
+                            }
+                            if (!CollectionUtils.isEmpty(playCardsDtoA.getRemainingCards())) {
+                                o.writeState("remainingCardsA", String.join(",", playCardsDtoA.getRemainingCards()));
+                            }
+                            if (!StringUtils.isBlank(playCardsDtoA.getSummary())) {
+                                o.writeState("summary", playCardsDtoA.getSummary());
+                            }
+                        }
+                    }
+
+                    value = o.readState("playCardsInfoB");
+                    String playCardsDtoJsonB = null == value ? "" : value.toString();
+                    if (!StringUtils.isBlank(playCardsDtoJsonB)) {
+                        PlayCardsDto playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, false);
+                        if (null != playCardsDtoB) {
+                            if (!StringUtils.isBlank(playCardsDtoB.getGameStatus())) {
+                                o.writeState("gameStatusB", playCardsDtoB.getGameStatus());
+                            }
+                            if (!CollectionUtils.isEmpty(playCardsDtoB.getPlayCards())) {
+                                o.writeState("playCardsB", String.join(",", playCardsDtoB.getPlayCards()));
+                            }
+                            if (!CollectionUtils.isEmpty(playCardsDtoB.getRemainingCards())) {
+                                o.writeState("remainingCardsB", String.join(",", playCardsDtoB.getRemainingCards()));
+                            }
+                            if (!StringUtils.isBlank(playCardsDtoB.getSummary())) {
+                                o.writeState("summary", playCardsDtoB.getSummary());
+                            }
+                        }
+                    }
+                })
+                .exitCondition(o -> {
+                    Object value = o.readState("gameStatusA");
+                    String gameStatusA = null == value ? "" : value.toString();
+                    if ("无牌-胜利" .equals(gameStatusA)) {
+                        return true;
+                    }
+                    value = o.readState("gameStatusB");
+                    String gameStatusB = null == value ? "" : value.toString();
+                    return "无牌-胜利" .equals(gameStatusB);
+                })
+                .output(o -> {
+                    return o.readState("summary");
+                })
+                .outputName("summary")
+                .build();
+    }
+
+    @Bean()
+    public AnshanPokerAgentA anshanPokerAgentA(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(AnshanPokerAgentA.class)
+                .chatModel(model)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("playCardsInfoA")
+                .build();
+    }
+
+    @Bean()
+    public AnshanPokerAgentB anshanPokerAgentB(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model) {
+        return AgenticServices.agentBuilder(AnshanPokerAgentB.class)
+                .chatModel(model)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("playCardsInfoB")
+                .build();
+    }
+
+    @Bean
+    public SimpleSequenceAgent simpleSequenceAgent(FarthestDistanceReadAgent farthestDistanceReadAgent,
                                                    TableFormatAgent tableFormatAgent) {
         return AgenticServices
-                .sequenceBuilder(SequenceMasterAgent.class)
+                .sequenceBuilder(SimpleSequenceAgent.class)
                 .subAgents(farthestDistanceReadAgent, tableFormatAgent)
                 .outputName("message")
                 .build();
     }
 
     @Bean
-    public FarthestDistanceReadAgent farthestDistanceReadAgent(@Qualifier("opencode_go_glm_5.2") OpenAiChatModel model,
+    public FarthestDistanceReadAgent farthestDistanceReadAgent(@Qualifier("volcengine_glm-5.2") OpenAiChatModel model,
                                                                RetrievalAugmentor retrievalAugmentor) {
         return AgenticServices.agentBuilder(FarthestDistanceReadAgent.class)
                 .chatModel(model)
@@ -266,6 +359,21 @@ public class AppConfig {
                 .baseUrl("https://ark.cn-beijing.volces.com/api/coding/v3")
                 .apiKey(volcengineApiKey)
                 .modelName("doubao-seed-2.0-pro")
+                .returnThinking(true)
+                .timeout(Duration.ofSeconds(300))
+                .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
+                .strictJsonSchema(true)
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean("volcengine_glm-5.2")
+    public OpenAiChatModel openAiChatModel() {
+        return OpenAiChatModel.builder()
+                .baseUrl("https://ark.cn-beijing.volces.com/api/coding/v3")
+                .apiKey(volcengineApiKey)
+                .modelName("glm-5.2")
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
                 .supportedCapabilities(Capability.RESPONSE_FORMAT_JSON_SCHEMA)
