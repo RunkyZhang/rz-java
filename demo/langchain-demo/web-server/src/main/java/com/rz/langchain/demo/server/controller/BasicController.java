@@ -18,6 +18,7 @@ package com.rz.langchain.demo.server.controller;
 
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
+import com.rz.langchain.demo.server.Helper;
 import com.rz.langchain.demo.server.JacksonHelper;
 import com.rz.langchain.demo.server.agent.SimpleLoopAgent;
 import com.rz.langchain.demo.server.agent.SimpleSequenceAgent;
@@ -138,10 +139,14 @@ public class BasicController {
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
-        return simpleSequenceAgent.chat(requestDto.getMessage());
+//        return simpleSequenceAgent.chat(requestDto.getMessage());
 
 
-        // return simpleLoopAgent.play("发牌阶段", );
+        Map<String, List<String>> cardsGroupByAB = Helper.refreshPoker();
+        String initialCardsA = String.join(",", cardsGroupByAB.get("A"));
+        String initialCardsB = String.join(",", cardsGroupByAB.get("B"));
+
+        return simpleLoopAgent.play("发牌阶段", initialCardsA, initialCardsB);
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？

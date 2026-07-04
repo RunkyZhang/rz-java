@@ -6,6 +6,6 @@ import dev.langchain4j.service.V;
 public interface SimpleLoopAgent {
     @Agent("你是多个ai agent中的组织者。负责调用，循环协调其他ai agent。")
     String play(@V("state") String state,
-                @V("initialCards_A") String initialCardsA,
-                @V("initialCards_B") String initialCardsB);
+                @V("remainingCards_A") String remainingCardsA,
+                @V("remainingCards_B") String remainingCardsB);
 }

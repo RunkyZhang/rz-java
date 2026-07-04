@@ -70,77 +70,108 @@ public class AppConfig {
 
     @Bean
     public SimpleLoopAgent simpleLoopAgent(AnshanPokerAgentA anshanPokerAgentA,
-                                           AnshanPokerAgentA anshanPokerAgentAB) {
+                                           AnshanPokerAgentB anshanPokerAgentB) {
         return AgenticServices
                 .loopBuilder(SimpleLoopAgent.class)
-                .subAgents(anshanPokerAgentA, anshanPokerAgentAB)
+                .subAgents(anshanPokerAgentA, anshanPokerAgentB)
                 .maxIterations(50)
                 .beforeCall(o -> {
-                    Object value = o.readState("index");
-                    int index = 0;
-                    if (null != value) {
-                        index = (Integer) value;
-                        index++;
+                    // 初始化参数，否者会报错
+                    Object value = o.readState("remainingCards_A");
+                    if (null == value) {
+                        o.writeState("remainingCards_A", "");
                     }
-                    o.writeState("index", index);
-                    if (0 < index) {
-                        o.writeState("state", "打牌阶段");
+                    value = o.readState("remainingCards_B");
+                    if (null == value) {
+                        o.writeState("remainingCards_B", "");
                     }
-
-                    value = o.readState("playCardsInfoA");
-                    String playCardsDtoJsonA = null == value ? "" : value.toString();
-                    if (!StringUtils.isBlank(playCardsDtoJsonA)) {
-                        PlayCardsDto playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, false);
-                        if (null != playCardsDtoA) {
-                            if (!StringUtils.isBlank(playCardsDtoA.getGameStatus())) {
-                                o.writeState("gameStatusA", playCardsDtoA.getGameStatus());
-                            }
-                            if (!CollectionUtils.isEmpty(playCardsDtoA.getPlayCards())) {
-                                o.writeState("playCardsA", String.join(",", playCardsDtoA.getPlayCards()));
-                            }
-                            if (!CollectionUtils.isEmpty(playCardsDtoA.getRemainingCards())) {
-                                o.writeState("remainingCardsA", String.join(",", playCardsDtoA.getRemainingCards()));
-                            }
-                            if (!StringUtils.isBlank(playCardsDtoA.getSummary())) {
-                                o.writeState("summary", playCardsDtoA.getSummary());
-                            }
-                        }
+                    value = o.readState("playCards_A");
+                    if (null == value) {
+                        o.writeState("playCards_A", "");
+                    }
+                    value = o.readState("playCards_B");
+                    if (null == value) {
+                        o.writeState("playCards_B", "");
                     }
 
-                    value = o.readState("playCardsInfoB");
-                    String playCardsDtoJsonB = null == value ? "" : value.toString();
-                    if (!StringUtils.isBlank(playCardsDtoJsonB)) {
-                        PlayCardsDto playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, false);
-                        if (null != playCardsDtoB) {
-                            if (!StringUtils.isBlank(playCardsDtoB.getGameStatus())) {
-                                o.writeState("gameStatusB", playCardsDtoB.getGameStatus());
-                            }
-                            if (!CollectionUtils.isEmpty(playCardsDtoB.getPlayCards())) {
-                                o.writeState("playCardsB", String.join(",", playCardsDtoB.getPlayCards()));
-                            }
-                            if (!CollectionUtils.isEmpty(playCardsDtoB.getRemainingCards())) {
-                                o.writeState("remainingCardsB", String.join(",", playCardsDtoB.getRemainingCards()));
-                            }
-                            if (!StringUtils.isBlank(playCardsDtoB.getSummary())) {
-                                o.writeState("summary", playCardsDtoB.getSummary());
-                            }
-                        }
-                    }
+                    List<String> logs = new ArrayList<>();
+                    o.writeState("logs", logs);
                 })
                 .exitCondition(o -> {
-                    Object value = o.readState("gameStatusA");
-                    String gameStatusA = null == value ? "" : value.toString();
+                    List<String> logs = (List<String>) o.readState("logs");
+
+                    // 格式化LLM的返回参数。并设置到AgenticScope的状态中去对全部Agent共享数据
+                    Object value = o.readState("playCardsInfo_A");
+                    String gameStatusA = "";
+                    String playCardsDtoJsonA = null == value ? "" : value.toString();
+                    if (!StringUtils.isBlank(playCardsDtoJsonA)) {
+                        PlayCardsDto playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, true);
+                        // 游戏状态
+                        if (!StringUtils.isBlank(playCardsDtoA.getGameStatus())) {
+                            o.writeState("gameStatus_A", playCardsDtoA.getGameStatus());
+                            gameStatusA = playCardsDtoA.getGameStatus();
+                        }
+                        // 出牌list
+                        if (!CollectionUtils.isEmpty(playCardsDtoA.getPlayCards())) {
+                            String playCardsJoinA = String.join(",", playCardsDtoA.getPlayCards());
+                            o.writeState("playCards_A", playCardsJoinA);
+                            logs.add("A: " + playCardsJoinA);
+
+                            // 只要出牌，就状态切换
+                            o.writeState("state", "打牌阶段");
+                        }
+                        // 剩余牌list
+                        if (!CollectionUtils.isEmpty(playCardsDtoA.getRemainingCards())) {
+                            o.writeState("remainingCards_A", String.join(",", playCardsDtoA.getRemainingCards()));
+                        }
+                        // 总结
+                        if (!StringUtils.isBlank(playCardsDtoA.getSummary())) {
+                            o.writeState("summary", playCardsDtoA.getSummary());
+                        }
+
+                        o.writeState("playCardsInfo_A", "");
+                    }
+
+                    value = o.readState("playCardsInfo_B");
+                    String gameStatusB = "";
+                    String playCardsDtoJsonB = null == value ? "" : value.toString();
+                    if (!StringUtils.isBlank(playCardsDtoJsonB)) {
+                        PlayCardsDto playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, true);
+                        // 游戏状态
+                        if (!StringUtils.isBlank(playCardsDtoB.getGameStatus())) {
+                            o.writeState("gameStatus_B", playCardsDtoB.getGameStatus());
+                            gameStatusB = playCardsDtoB.getGameStatus();
+                        }
+                        // 出牌list
+                        if (!CollectionUtils.isEmpty(playCardsDtoB.getPlayCards())) {
+                            String playCardsJoinB = String.join(",", playCardsDtoB.getPlayCards());
+                            o.writeState("playCards_B", playCardsJoinB);
+                            logs.add("B: " + playCardsJoinB);
+
+                            // 只要出牌，就状态切换
+                            o.writeState("state", "打牌阶段");
+                        }
+                        // 剩余牌list
+                        if (!CollectionUtils.isEmpty(playCardsDtoB.getRemainingCards())) {
+                            o.writeState("remainingCards_B", String.join(",", playCardsDtoB.getRemainingCards()));
+                        }
+                        // 总结
+                        if (!StringUtils.isBlank(playCardsDtoB.getSummary())) {
+                            o.writeState("summary", playCardsDtoB.getSummary());
+                        }
+
+                        o.writeState("playCardsInfo_B", "");
+                    }
+
                     if ("无牌-胜利" .equals(gameStatusA)) {
                         return true;
                     }
-                    value = o.readState("gameStatusB");
-                    String gameStatusB = null == value ? "" : value.toString();
                     return "无牌-胜利" .equals(gameStatusB);
                 })
                 .output(o -> {
-                    return o.readState("summary");
+                    return o.readState("logs");
                 })
-                .outputName("summary")
+                .outputName("logs")
                 .build();
     }
 
@@ -148,8 +179,8 @@ public class AppConfig {
     public AnshanPokerAgentA anshanPokerAgentA(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(AnshanPokerAgentA.class)
                 .chatModel(model)
-                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("playCardsInfoA")
+                // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("playCardsInfo_A")
                 .build();
     }
 
@@ -157,8 +188,8 @@ public class AppConfig {
     public AnshanPokerAgentB anshanPokerAgentB(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model) {
         return AgenticServices.agentBuilder(AnshanPokerAgentB.class)
                 .chatModel(model)
-                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("playCardsInfoB")
+                // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("playCardsInfo_B")
                 .build();
     }
 
