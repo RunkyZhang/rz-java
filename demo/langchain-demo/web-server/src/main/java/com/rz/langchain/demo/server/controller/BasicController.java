@@ -21,6 +21,7 @@ import com.hankcs.hanlp.tokenizer.StandardTokenizer;
 import com.rz.langchain.demo.server.Helper;
 import com.rz.langchain.demo.server.JacksonHelper;
 import com.rz.langchain.demo.server.agent.SimpleLoopAgent;
+import com.rz.langchain.demo.server.agent.SimpleParallelAgent;
 import com.rz.langchain.demo.server.agent.SimpleSequenceAgent;
 import com.rz.langchain.demo.server.agent.ToolsAgent;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
@@ -130,7 +131,8 @@ public class BasicController {
     private ToolsAgent toolsAgent;
     @Resource
     private SimpleLoopAgent simpleLoopAgent;
-
+    @Resource
+    private SimpleParallelAgent simpleParallelAgent;
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
@@ -139,14 +141,19 @@ public class BasicController {
     @PostMapping("/chat")
     @ResponseBody
     public String chat(@RequestBody ChatMessagesDto requestDto) {
+        // 顺序多agent
 //        return simpleSequenceAgent.chat(requestDto.getMessage());
 
+        // 循环+判断多agent
+//        Map<String, List<String>> cardsGroupByAB = Helper.refreshPoker();
+//        String initialCardsA = String.join(",", cardsGroupByAB.get("A"));
+//        String initialCardsB = String.join(",", cardsGroupByAB.get("B"));
+//        List<String> exLogs = simpleLoopAgent.play("发牌阶段", initialCardsA, initialCardsB);
+//        return openAiChatModel.chat(String.format("请根据以下牌局的日志进行尽量详细总结，样式美观：%s", String.join("\n", exLogs)));
 
-        Map<String, List<String>> cardsGroupByAB = Helper.refreshPoker();
-        String initialCardsA = String.join(",", cardsGroupByAB.get("A"));
-        String initialCardsB = String.join(",", cardsGroupByAB.get("B"));
-
-        return simpleLoopAgent.play("发牌阶段", initialCardsA, initialCardsB);
+        // 并行多agent
+        List<Tuple2<String, String>> foodsAndMovies = simpleParallelAgent.find("一般");
+        return foodsAndMovies.toString();
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
@@ -171,7 +178,7 @@ public class BasicController {
             // 不想等。不走RAG。但是还是回去查一次向量数据库。蛋疼
             Filter filter = MetadataFilterBuilder.metadataKey(userMessageName).isEqualTo(userMessageName);
             filterMapper.add(userMessageName, filter);
-        } else if (!"all" .equals(requestDto.getDocumentName())) {
+        } else if (!"all".equals(requestDto.getDocumentName())) {
             Filter filter = MetadataFilterBuilder.metadataKey("name").isEqualTo(requestDto.getDocumentName());
             filterMapper.add(userMessageName, filter);
         }
@@ -589,11 +596,11 @@ public class BasicController {
         Filter filter = null;
         Filter typeFilter = MetadataFilterBuilder.metadataKey("type").isEqualTo(type);
         Filter nameFilter = MetadataFilterBuilder.metadataKey("name").isEqualTo(name);
-        if (!"all" .equals(type) && !"all" .equals(name)) {
+        if (!"all".equals(type) && !"all".equals(name)) {
             filter = Filter.and(typeFilter, nameFilter);
-        } else if (!"all" .equals(type)) {
+        } else if (!"all".equals(type)) {
             filter = typeFilter;
-        } else if (!"all" .equals(name)) {
+        } else if (!"all".equals(name)) {
             filter = nameFilter;
         }
         EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
@@ -703,11 +710,11 @@ public class BasicController {
                     continue;
                 }
 
-                if ("name" .equals(embeddingMetadataEntity.getKey())) {
+                if ("name".equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setName(embeddingMetadataEntity.getString_value());
-                } else if ("type" .equals(embeddingMetadataEntity.getKey())) {
+                } else if ("type".equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setType(embeddingMetadataEntity.getString_value());
-                } else if ("document_id" .equals(embeddingMetadataEntity.getKey())) {
+                } else if ("document_id".equals(embeddingMetadataEntity.getKey())) {
                     documentDto.setId(embeddingMetadataEntity.getString_value());
                 }
             }

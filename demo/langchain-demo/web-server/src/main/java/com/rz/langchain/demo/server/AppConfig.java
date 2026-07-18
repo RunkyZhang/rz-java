@@ -5,6 +5,7 @@ import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
 import com.rz.langchain.demo.server.dto.PlayCardsDto;
+import com.rz.langchain.demo.server.dto.Tuple2;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
@@ -55,6 +56,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 
 @Slf4j
@@ -70,6 +72,46 @@ public class AppConfig {
     public String volcengineApiKey;
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
+
+    @Bean
+    public SimpleParallelAgent simpleParallelAgent(FoodAgent foodAgent,
+                                                   MovieAgent movieAgent) {
+        return AgenticServices
+                .parallelBuilder(SimpleParallelAgent.class)
+                .subAgents(foodAgent, movieAgent)
+                .executorService(Executors.newFixedThreadPool(2))
+                .outputName("plans")
+                .output(o -> {
+                    List<String> movies = o.readState("movies", List.of());
+                    List<String> meals = o.readState("foods", List.of());
+
+                    List<Tuple2<String, String>> moviesAndMeals = new ArrayList<>();
+                    for (int i = 0; i < movies.size(); i++) {
+                        if (i >= meals.size()) break;
+                        moviesAndMeals.add(new Tuple2(movies.get(i), meals.get(i)));
+                    }
+                    return moviesAndMeals;
+                })
+                .build();
+    }
+
+    @Bean()
+    public FoodAgent foodAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(FoodAgent.class)
+                .chatModel(model)
+                // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("foods")
+                .build();
+    }
+
+    @Bean()
+    public MovieAgent movieAgent(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model) {
+        return AgenticServices.agentBuilder(MovieAgent.class)
+                .chatModel(model)
+                // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("movies")
+                .build();
+    }
 
     @Bean
     public SimpleLoopAgent simpleLoopAgent(AnshanPokerAgentA anshanPokerAgentA,
@@ -101,14 +143,13 @@ public class AppConfig {
                     if (null == value) {
                         o.writeState("playCards_B", "");
                     }
-                    o.writeState("summary", "");
 
                     List<String> logs = new ArrayList<>();
                     o.writeState("logs", logs);
                 })
                 .exitCondition(o -> {
-                    List<String> logs = (List<String>) o.readState("logs");
-                    String state = (String) o.readState("state");
+                    List<String> logs = o.readState("logs", List.of());
+                    String state = o.readState("state", "");
                     if ("发牌阶段".equals(state)) {
                         o.writeState("state", "打牌阶段");
                     }
@@ -209,17 +250,9 @@ public class AppConfig {
                     }
 
                     boolean result = "无牌-胜利".equals(playerStatusA) || "无牌-胜利".equals(playerStatusB);
-                    if (result) {
-                        String summary = model.chat(String.format("请根据以下牌局的日志进行尽量详细总结，样式美观：%s", String.join("\n", logs)));
-                        o.writeState("summary", summary);
-                    }
-
                     return result;
                 })
-//                .output(o -> {
-//                    // 不生效！！！？？？
-//                })
-                .outputName("summary")
+                .outputName("logs")
                 .build();
     }
 
