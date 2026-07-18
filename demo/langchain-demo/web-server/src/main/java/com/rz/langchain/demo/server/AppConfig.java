@@ -10,6 +10,7 @@ import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -43,6 +44,7 @@ import dev.langchain4j.store.embedding.chroma.ChromaApiVersion;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+@Slf4j
 @Configuration
 public class AppConfig {
     @Value("${ai.model.bailian.codeplan.apiKey}")
@@ -75,7 +78,15 @@ public class AppConfig {
                 .loopBuilder(SimpleLoopAgent.class)
                 .subAgents(anshanPokerAgentA, anshanPokerAgentB)
                 .maxIterations(50)
+                .errorHandler((errorContext) -> {
+                    log.error("errorContext: {}", errorContext);
+                    return ErrorRecoveryResult.retry();
+                })
                 .beforeCall(o -> {
+                    if (true) {
+                        throw new RuntimeException("ssssssssss");
+                    }
+
                     // 初始化参数，否者会报错
                     Object value = o.readState("remainingCards_A");
                     if (null == value) {
@@ -99,74 +110,98 @@ public class AppConfig {
                 })
                 .exitCondition(o -> {
                     List<String> logs = (List<String>) o.readState("logs");
+                    String state = (String) o.readState("state");
+                    if ("发牌阶段".equals(state)) {
+                        o.writeState("state", "打牌阶段");
+                    }
 
-                    // 格式化LLM的返回参数。并设置到AgenticScope的状态中去对全部Agent共享数据
+                    // 有时候LLM会返回一个空字符串，如果不置空，会导致下一个LLM认为这个LLM又出了上一次出过的牌
+                    // 所以这里置空，避免重复出牌，兜底逻辑认为这个LLM没有出牌
+                    o.writeState("playCards_A", "");
+                    o.writeState("playCards_B", "");
+
                     Object value = o.readState("playCardsInfo_A");
                     String gameStatusA = "";
                     String playCardsDtoJsonA = null == value ? "" : value.toString();
+                    value = o.readState("playCardsInfo_B");
+                    String gameStatusB = "";
+                    String playCardsDtoJsonB = null == value ? "" : value.toString();
+
+                    // 格式化LLM的返回参数。并设置到AgenticScope的状态中去对全部Agent共享数据
                     if (!StringUtils.isBlank(playCardsDtoJsonA)) {
+                        String description = "大师A：";
                         PlayCardsDto playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, true);
                         // 游戏状态
                         if (!StringUtils.isBlank(playCardsDtoA.getGameStatus())) {
                             o.writeState("gameStatus_A", playCardsDtoA.getGameStatus());
                             gameStatusA = playCardsDtoA.getGameStatus();
+
+                            description += "；决定：" + playCardsDtoA.getGameStatus();
                         }
                         // 出牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoA.getPlayCards())) {
                             String playCardsJoinA = String.join(",", playCardsDtoA.getPlayCards());
                             o.writeState("playCards_A", playCardsJoinA);
-                            logs.add("A: " + playCardsJoinA);
+                            logs.add("大师A: " + playCardsJoinA);
 
-                            // 只要出牌，就状态切换
-                            o.writeState("state", "打牌阶段");
+                            description += "；出牌：" + playCardsJoinA;
+                        } else {
+                            description += "；不出牌：[]";
                         }
                         // 剩余牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoA.getRemainingCards())) {
                             o.writeState("remainingCards_A", String.join(",", playCardsDtoA.getRemainingCards()));
                         }
-                        // 总结
+                        // 闲话
                         if (!StringUtils.isBlank(playCardsDtoA.getSummary())) {
                             o.writeState("summary", playCardsDtoA.getSummary());
+
+                            description += "；闲话：" + playCardsDtoA.getSummary();
                         }
 
                         o.writeState("playCardsInfo_A", "");
-                    }
-
-                    value = o.readState("playCardsInfo_B");
-                    String gameStatusB = "";
-                    String playCardsDtoJsonB = null == value ? "" : value.toString();
-                    if (!StringUtils.isBlank(playCardsDtoJsonB)) {
+                        log.warn(description);
+                    } else if (!StringUtils.isBlank(playCardsDtoJsonB)) {
+                        String description = "大师B：";
                         PlayCardsDto playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, true);
                         // 游戏状态
                         if (!StringUtils.isBlank(playCardsDtoB.getGameStatus())) {
                             o.writeState("gameStatus_B", playCardsDtoB.getGameStatus());
                             gameStatusB = playCardsDtoB.getGameStatus();
+
+                            description += "；决定：" + playCardsDtoB.getGameStatus();
                         }
                         // 出牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoB.getPlayCards())) {
                             String playCardsJoinB = String.join(",", playCardsDtoB.getPlayCards());
                             o.writeState("playCards_B", playCardsJoinB);
-                            logs.add("B: " + playCardsJoinB);
+                            logs.add("大师B: " + playCardsJoinB);
 
-                            // 只要出牌，就状态切换
-                            o.writeState("state", "打牌阶段");
+                            description += "；出牌：" + playCardsJoinB;
+                        } else {
+                            description += "；不出牌：[]";
                         }
                         // 剩余牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoB.getRemainingCards())) {
                             o.writeState("remainingCards_B", String.join(",", playCardsDtoB.getRemainingCards()));
                         }
-                        // 总结
+                        // 闲话
                         if (!StringUtils.isBlank(playCardsDtoB.getSummary())) {
                             o.writeState("summary", playCardsDtoB.getSummary());
+
+                            description += "；闲话：" + playCardsDtoB.getSummary();
                         }
 
                         o.writeState("playCardsInfo_B", "");
+                        log.warn(description);
+                    } else {
+                        log.error("哪个LLM又抽风！只返回thinking，不返回text。当前局面是：{}", logs);
                     }
 
-                    if ("无牌-胜利" .equals(gameStatusA)) {
+                    if ("无牌-胜利".equals(gameStatusA)) {
                         return true;
                     }
-                    return "无牌-胜利" .equals(gameStatusB);
+                    return "无牌-胜利".equals(gameStatusB);
                 })
                 .output(o -> {
                     return o.readState("logs");

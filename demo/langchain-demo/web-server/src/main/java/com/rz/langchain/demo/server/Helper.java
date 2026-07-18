@@ -10,24 +10,22 @@ public class Helper {
 
         List<String> deck = new ArrayList<>();
 
-        // 两副牌，每副54张，共108张
-        for (int d = 0; d < 2; d++) {
-            // 加入大小王
-            Collections.addAll(deck, jokers);
-            // 加入花色牌（13个点数 × 4种花色 = 52张）
-            for (String value : values) {
-                for (String suit : suits) {
-                    deck.add(value + "【" + suit + "】");
-                }
+        // 一副牌，共54张
+        // 加入大小王
+        Collections.addAll(deck, jokers);
+        // 加入花色牌（13个点数 × 4种花色 = 52张）
+        for (String value : values) {
+            for (String suit : suits) {
+                deck.add(value + "【" + suit + "】");
             }
         }
 
         // 洗牌
         Collections.shuffle(deck);
 
-        // 分成两份，每份54张
-        List<String> playerA = new ArrayList<>(deck.subList(0, 54));
-        List<String> playerB = new ArrayList<>(deck.subList(54, 108));
+        // 分成两份，每份27张
+        List<String> playerA = new ArrayList<>(deck.subList(0, 27));
+        List<String> playerB = new ArrayList<>(deck.subList(27, 54));
 
         Map<String, List<String>> result = new HashMap<>();
         result.put("A", playerA);
