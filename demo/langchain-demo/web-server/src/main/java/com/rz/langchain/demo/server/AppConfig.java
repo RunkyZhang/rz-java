@@ -208,9 +208,7 @@ public class AppConfig {
                         log.error("哪个LLM又抽风！只返回thinking，不返回text。当前局面是：{}", logs);
                     }
 
-                    boolean result = "无牌-胜利".equals(playerStatusA);
-                    result = "无牌-胜利".equals(playerStatusB);
-
+                    boolean result = "无牌-胜利".equals(playerStatusA) || "无牌-胜利".equals(playerStatusB);
                     if (result) {
                         String summary = model.chat(String.format("请根据以下牌局的日志进行尽量详细总结，样式美观：%s", String.join("\n", logs)));
                         o.writeState("summary", summary);
@@ -225,6 +223,7 @@ public class AppConfig {
                 .build();
     }
 
+    // 护栏机制相关方法：Guardrails
     @Bean()
     public AnshanPokerAgentA anshanPokerAgentA(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
         return AgenticServices.agentBuilder(AnshanPokerAgentA.class)
