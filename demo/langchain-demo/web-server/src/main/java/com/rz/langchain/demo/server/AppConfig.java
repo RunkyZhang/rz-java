@@ -74,7 +74,7 @@ public class AppConfig {
     @Bean
     public SimpleLoopAgent simpleLoopAgent(AnshanPokerAgentA anshanPokerAgentA,
                                            AnshanPokerAgentB anshanPokerAgentB,
-                                           @Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+                                           @Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
         return AgenticServices
                 .loopBuilder(SimpleLoopAgent.class)
                 .subAgents(anshanPokerAgentA, anshanPokerAgentB)
