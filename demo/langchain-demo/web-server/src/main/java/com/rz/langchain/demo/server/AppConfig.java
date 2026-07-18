@@ -73,7 +73,8 @@ public class AppConfig {
 
     @Bean
     public SimpleLoopAgent simpleLoopAgent(AnshanPokerAgentA anshanPokerAgentA,
-                                           AnshanPokerAgentB anshanPokerAgentB) {
+                                           AnshanPokerAgentB anshanPokerAgentB,
+                                           @Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices
                 .loopBuilder(SimpleLoopAgent.class)
                 .subAgents(anshanPokerAgentA, anshanPokerAgentB)
@@ -83,10 +84,6 @@ public class AppConfig {
                     return ErrorRecoveryResult.retry();
                 })
                 .beforeCall(o -> {
-                    if (true) {
-                        throw new RuntimeException("ssssssssss");
-                    }
-
                     // 初始化参数，否者会报错
                     Object value = o.readState("remainingCards_A");
                     if (null == value) {
@@ -104,6 +101,7 @@ public class AppConfig {
                     if (null == value) {
                         o.writeState("playCards_B", "");
                     }
+                    o.writeState("summary", "");
 
                     List<String> logs = new ArrayList<>();
                     o.writeState("logs", logs);
@@ -121,22 +119,30 @@ public class AppConfig {
                     o.writeState("playCards_B", "");
 
                     Object value = o.readState("playCardsInfo_A");
-                    String gameStatusA = "";
+                    String playerStatusA = "";
                     String playCardsDtoJsonA = null == value ? "" : value.toString();
                     value = o.readState("playCardsInfo_B");
-                    String gameStatusB = "";
+                    String playerStatusB = "";
                     String playCardsDtoJsonB = null == value ? "" : value.toString();
 
                     // 格式化LLM的返回参数。并设置到AgenticScope的状态中去对全部Agent共享数据
                     if (!StringUtils.isBlank(playCardsDtoJsonA)) {
+                        PlayCardsDto playCardsDtoA;
+                        try {
+                            playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, true);
+                        } catch (Exception e) {
+                            playCardsDtoA = new PlayCardsDto();
+                            // TODO：当对手状态异常的时候。自己轮空不出牌，让对手在试一次
+                            playCardsDtoA.setStatus("有牌-异常");
+                            playCardsDtoA.setSubSummary("脑子出问题了，返回的Json格式不对。哎！这点小事都做不好？？！！");
+                        }
                         String description = "大师A：";
-                        PlayCardsDto playCardsDtoA = JacksonHelper.toObj(playCardsDtoJsonA, PlayCardsDto.class, true);
                         // 游戏状态
-                        if (!StringUtils.isBlank(playCardsDtoA.getGameStatus())) {
-                            o.writeState("gameStatus_A", playCardsDtoA.getGameStatus());
-                            gameStatusA = playCardsDtoA.getGameStatus();
+                        if (!StringUtils.isBlank(playCardsDtoA.getStatus())) {
+                            o.writeState("gameStatus_A", playCardsDtoA.getStatus());
+                            playerStatusA = playCardsDtoA.getStatus();
 
-                            description += "；决定：" + playCardsDtoA.getGameStatus();
+                            description += "；状态：" + playCardsDtoA.getStatus();
                         }
                         // 出牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoA.getPlayCards())) {
@@ -153,23 +159,29 @@ public class AppConfig {
                             o.writeState("remainingCards_A", String.join(",", playCardsDtoA.getRemainingCards()));
                         }
                         // 闲话
-                        if (!StringUtils.isBlank(playCardsDtoA.getSummary())) {
-                            o.writeState("summary", playCardsDtoA.getSummary());
-
-                            description += "；闲话：" + playCardsDtoA.getSummary();
+                        if (!StringUtils.isBlank(playCardsDtoA.getSubSummary())) {
+                            description += "；小结：" + playCardsDtoA.getSubSummary();
                         }
 
                         o.writeState("playCardsInfo_A", "");
                         log.warn(description);
                     } else if (!StringUtils.isBlank(playCardsDtoJsonB)) {
+                        PlayCardsDto playCardsDtoB = null;
+                        try {
+                            playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, true);
+                        } catch (Exception e) {
+                            playCardsDtoB = new PlayCardsDto();
+                            // TODO：当对手状态异常的时候。自己轮空不出牌，让对手在试一次
+                            playCardsDtoB.setStatus("有牌-异常");
+                            playCardsDtoB.setSubSummary("脑子出问题了，返回的Json格式不对。哎！这点小事都做不好？？！！");
+                        }
                         String description = "大师B：";
-                        PlayCardsDto playCardsDtoB = JacksonHelper.toObj(playCardsDtoJsonB, PlayCardsDto.class, true);
                         // 游戏状态
-                        if (!StringUtils.isBlank(playCardsDtoB.getGameStatus())) {
-                            o.writeState("gameStatus_B", playCardsDtoB.getGameStatus());
-                            gameStatusB = playCardsDtoB.getGameStatus();
+                        if (!StringUtils.isBlank(playCardsDtoB.getStatus())) {
+                            o.writeState("gameStatus_B", playCardsDtoB.getStatus());
+                            playerStatusB = playCardsDtoB.getStatus();
 
-                            description += "；决定：" + playCardsDtoB.getGameStatus();
+                            description += "；状态：" + playCardsDtoB.getStatus();
                         }
                         // 出牌list
                         if (!CollectionUtils.isEmpty(playCardsDtoB.getPlayCards())) {
@@ -186,10 +198,8 @@ public class AppConfig {
                             o.writeState("remainingCards_B", String.join(",", playCardsDtoB.getRemainingCards()));
                         }
                         // 闲话
-                        if (!StringUtils.isBlank(playCardsDtoB.getSummary())) {
-                            o.writeState("summary", playCardsDtoB.getSummary());
-
-                            description += "；闲话：" + playCardsDtoB.getSummary();
+                        if (!StringUtils.isBlank(playCardsDtoB.getSubSummary())) {
+                            description += "；小结：" + playCardsDtoB.getSubSummary();
                         }
 
                         o.writeState("playCardsInfo_B", "");
@@ -198,20 +208,25 @@ public class AppConfig {
                         log.error("哪个LLM又抽风！只返回thinking，不返回text。当前局面是：{}", logs);
                     }
 
-                    if ("无牌-胜利".equals(gameStatusA)) {
-                        return true;
+                    boolean result = "无牌-胜利".equals(playerStatusA);
+                    result = "无牌-胜利".equals(playerStatusB);
+
+                    if (result) {
+                        String summary = model.chat(String.format("请根据以下牌局的日志进行尽量详细总结，样式美观：%s", String.join("\n", logs)));
+                        o.writeState("summary", summary);
                     }
-                    return "无牌-胜利".equals(gameStatusB);
+
+                    return result;
                 })
-                .output(o -> {
-                    return o.readState("logs");
-                })
-                .outputName("logs")
+//                .output(o -> {
+//                    // 不生效！！！？？？
+//                })
+                .outputName("summary")
                 .build();
     }
 
     @Bean()
-    public AnshanPokerAgentA anshanPokerAgentA(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+    public AnshanPokerAgentA anshanPokerAgentA(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
         return AgenticServices.agentBuilder(AnshanPokerAgentA.class)
                 .chatModel(model)
                 // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
