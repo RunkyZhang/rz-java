@@ -20,10 +20,7 @@ import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
 import com.rz.langchain.demo.server.Helper;
 import com.rz.langchain.demo.server.JacksonHelper;
-import com.rz.langchain.demo.server.agent.SimpleLoopAgent;
-import com.rz.langchain.demo.server.agent.SimpleParallelAgent;
-import com.rz.langchain.demo.server.agent.SimpleSequenceAgent;
-import com.rz.langchain.demo.server.agent.ToolsAgent;
+import com.rz.langchain.demo.server.agent.*;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
@@ -133,6 +130,8 @@ public class BasicController {
     private SimpleLoopAgent simpleLoopAgent;
     @Resource
     private SimpleParallelAgent simpleParallelAgent;
+    @Resource
+    private SimpleRouterAgent simpleRouterAgent;
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
@@ -152,8 +151,11 @@ public class BasicController {
 //        return openAiChatModel.chat(String.format("请根据以下牌局的日志进行尽量详细总结，样式美观：%s", String.join("\n", exLogs)));
 
         // 并行多agent
-        List<Tuple2<String, String>> foodsAndMovies = simpleParallelAgent.find("一般");
-        return foodsAndMovies.toString();
+//        List<Tuple2<String, String>> foodsAndMovies = simpleParallelAgent.find("一般");
+//        return foodsAndMovies.toString();
+
+        // 条件agent
+        return simpleRouterAgent.ask(requestDto.getMessage());
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？

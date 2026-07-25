@@ -5,12 +5,14 @@ import com.rz.langchain.demo.server.assistant.ChatAssistant;
 import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
 import com.rz.langchain.demo.server.dto.PlayCardsDto;
+import com.rz.langchain.demo.server.dto.RequestCategoryEnum;
 import com.rz.langchain.demo.server.dto.Tuple2;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.message.ChatMessage;
@@ -72,6 +74,64 @@ public class AppConfig {
     public String volcengineApiKey;
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
+
+    @Bean
+    public SimpleRouterAgent simpleRouterAgent(RequestCategoryRouterAgent requestCategoryRouterAgent,
+                                               LegalExpertAgent legalExpertAgent,
+                                               MedicalExpertAgent medicalExpertAgent,
+                                               TechnicalExpertAgent technicalExpertAgent) {
+
+        UntypedAgent conditionalAgent = AgenticServices.conditionalBuilder()
+                .subAgents(o -> o.readState("category", RequestCategoryEnum.UNKNOWN) == RequestCategoryEnum.LEGAL, legalExpertAgent)
+                .subAgents(o -> o.readState("category", RequestCategoryEnum.UNKNOWN) == RequestCategoryEnum.MEDICAL, medicalExpertAgent)
+                .subAgents(o -> o.readState("category", RequestCategoryEnum.UNKNOWN) == RequestCategoryEnum.TECHNICAL, technicalExpertAgent)
+                .build();
+
+        return AgenticServices.sequenceBuilder(SimpleRouterAgent.class)
+                .subAgents(requestCategoryRouterAgent, conditionalAgent)
+                .beforeCall(o -> {
+                    System.out.println("category: " + o.readState("category", RequestCategoryEnum.UNKNOWN));
+                    System.out.println("request: " + o.readState("request"));
+                })
+                .outputName("response")
+                .build();
+    }
+
+    @Bean
+    public RequestCategoryRouterAgent requestCategoryRouterAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(RequestCategoryRouterAgent.class)
+                .chatModel(model)
+                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("category")
+                .build();
+    }
+
+    @Bean
+    public LegalExpertAgent legalExpertAgent(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
+        return AgenticServices.agentBuilder(LegalExpertAgent.class)
+                .chatModel(model)
+                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("response")
+                .build();
+    }
+
+    @Bean
+    public MedicalExpertAgent medicalExpertAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(MedicalExpertAgent.class)
+                .chatModel(model)
+                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("response")
+                .build();
+    }
+
+    @Bean
+    public TechnicalExpertAgent technicalExpertAgent(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model) {
+        return AgenticServices.agentBuilder(TechnicalExpertAgent.class)
+                .chatModel(model)
+                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .outputName("response")
+                .build();
+    }
 
     @Bean
     public SimpleParallelAgent simpleParallelAgent(FoodAgent foodAgent,
