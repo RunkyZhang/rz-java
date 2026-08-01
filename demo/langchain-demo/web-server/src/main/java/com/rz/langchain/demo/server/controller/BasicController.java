@@ -139,7 +139,7 @@ public class BasicController {
     // 测试SimpleLoopAgent
     @PostMapping("/chat")
     @ResponseBody
-    public String chat(@RequestBody ChatMessagesDto requestDto) {
+    public String chatWithAgent(@RequestBody ChatMessagesDto requestDto) {
         // 顺序多agent
 //        return simpleSequenceAgent.chat(requestDto.getMessage());
 
@@ -195,33 +195,10 @@ public class BasicController {
 //        return isSayHello ? "欢迎来到智能客服系统" : "...";
     }
 
-    // http://localhost:8080/hello?value=介绍一下你自己
-    @GetMapping("/hello")
-    @ResponseBody
-    public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
-//        String text =
-//                "北京市（Beijing），简称“京”，古称燕京、北平，是中华人民共和国首都、直辖市、国家中心城市、超大城市， [185]国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心， [1]中国历史文化名城和古都之一，世界一线城市。 [3] [142] [188]截至2023年10月，北京市下辖16个区，总面积16410.54平方千米。 [82] [193] [195]2023年末，北京市常住人口2185.8万人。 [214-215]";
-//        String query = "中国首都是哪座城市";
-//        Response<Double> response = scoringModel.score(text, query);
-//        System.out.println(response);
-
-        String answer = "";
-        answer = getAnswerWithJson(value);
-        // answer = getAnswerWithSystemMessage(value);
-        // answer = getAnswerWithTools(value);
-        // answer = getAnswerWithMemory(value);
-        // answer = getAnswerByStream();
-        // answer = getAnswerByMessages();
-        // answer = getAnswerByImage();
-        // answer = getAnswerByImageBase64();
-        // answer = getAnswerByMessage(value);
-        // answer = getAnswer(value);
-
-        return answer;
-    }
-
+    // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
     // 测试：给00545579发一条企业微信消息，内容是【厉害呀】
     // 测试：先帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情。然后把短文内容通过企业微信发给00545579
+    // 测试：快递请邮寄到上海市浦东新区陆家嘴环路1000号恒生银行大厦18层，13688889999王五先生收就好了。电话记得要脱敏，如果人没接电话那么就把快递请放前台，勿打电话
     // http://localhost:8080/index.html
     @PostMapping("/chatWithNative")
     @ResponseBody
@@ -306,6 +283,31 @@ public class BasicController {
                 chatMemory.add(toolExecutionResultMessages);
             }
         }
+    }
+
+    // http://localhost:8080/hello?value=介绍一下你自己
+    @GetMapping("/hello")
+    @ResponseBody
+    public String hello(@RequestParam(value = "value", defaultValue = "介绍一下你自己") String value) {
+//        String text =
+//                "北京市（Beijing），简称“京”，古称燕京、北平，是中华人民共和国首都、直辖市、国家中心城市、超大城市， [185]国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心， [1]中国历史文化名城和古都之一，世界一线城市。 [3] [142] [188]截至2023年10月，北京市下辖16个区，总面积16410.54平方千米。 [82] [193] [195]2023年末，北京市常住人口2185.8万人。 [214-215]";
+//        String query = "中国首都是哪座城市";
+//        Response<Double> response = scoringModel.score(text, query);
+//        System.out.println(response);
+
+        String answer = "";
+        answer = getAnswerWithJson(value);
+        // answer = getAnswerWithSystemMessage(value);
+        // answer = getAnswerWithTools(value);
+        // answer = getAnswerWithMemory(value);
+        // answer = getAnswerByStream();
+        // answer = getAnswerByMessages();
+        // answer = getAnswerByImage();
+        // answer = getAnswerByImageBase64();
+        // answer = getAnswerByMessage(value);
+        // answer = getAnswer(value);
+
+        return answer;
     }
 
     private String getAnswer(String value) {

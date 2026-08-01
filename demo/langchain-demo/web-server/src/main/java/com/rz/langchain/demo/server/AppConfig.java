@@ -96,7 +96,7 @@ public class AppConfig {
                     System.out.println("category: " + o.readState("category", RequestCategoryEnum.UNKNOWN));
                     System.out.println("request: " + o.readState("request"));
                 })
-                .outputName("response")
+                .outputKey("response")
                 .build();
     }
 
@@ -106,7 +106,7 @@ public class AppConfig {
                 .chatModel(model)
                 // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .outputName("category")
+                .outputKey("category")
                 .build();
     }
 
@@ -117,7 +117,7 @@ public class AppConfig {
                 // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .summarizedContext("medical", "technical")
-                .outputName("response")
+                .outputKey("response")
                 .build();
     }
 
@@ -131,7 +131,7 @@ public class AppConfig {
                 .context(agenticScope -> {
                     return contextSummarizer.summarize(agenticScope.contextAsConversation());
                 })
-                .outputName("response")
+                .outputKey("response")
                 .build();
     }
 
@@ -142,7 +142,7 @@ public class AppConfig {
                 .chatModel(model)
                 // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .outputName("response")
+                .outputKey("response")
                 .build();
     }
 
@@ -150,7 +150,7 @@ public class AppConfig {
     public ContextSummarizer contextSummarizer(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(ContextSummarizer.class)
                 .chatModel(model)
-                .outputName("response")
+                .outputKey("response")
                 .build();
     }
 
@@ -160,8 +160,8 @@ public class AppConfig {
         return AgenticServices
                 .parallelBuilder(SimpleParallelAgent.class)
                 .subAgents(foodAgent, movieAgent)
-                .executorService(Executors.newFixedThreadPool(2))
-                .outputName("plans")
+                .executor(Executors.newFixedThreadPool(2))
+                .outputKey("plans")
                 .output(o -> {
                     List<String> movies = o.readState("movies", List.of());
                     List<String> meals = o.readState("foods", List.of());
@@ -181,7 +181,7 @@ public class AppConfig {
         return AgenticServices.agentBuilder(FoodAgent.class)
                 .chatModel(model)
                 // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("foods")
+                .outputKey("foods")
                 .build();
     }
 
@@ -190,7 +190,7 @@ public class AppConfig {
         return AgenticServices.agentBuilder(MovieAgent.class)
                 .chatModel(model)
                 // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("movies")
+                .outputKey("movies")
                 .build();
     }
 
@@ -335,7 +335,7 @@ public class AppConfig {
                     boolean result = "无牌-胜利".equals(playerStatusA) || "无牌-胜利".equals(playerStatusB);
                     return result;
                 })
-                .outputName("logs")
+                .outputKey("logs")
                 .build();
     }
 
@@ -345,7 +345,7 @@ public class AppConfig {
         return AgenticServices.agentBuilder(AnshanPokerAgentA.class)
                 .chatModel(model)
                 // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("playCardsInfo_A")
+                .outputKey("playCardsInfo_A")
                 .build();
     }
 
@@ -354,7 +354,7 @@ public class AppConfig {
         return AgenticServices.agentBuilder(AnshanPokerAgentB.class)
                 .chatModel(model)
                 // .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
-                .outputName("playCardsInfo_B")
+                .outputKey("playCardsInfo_B")
                 .build();
     }
 
@@ -364,7 +364,7 @@ public class AppConfig {
         return AgenticServices
                 .sequenceBuilder(SimpleSequenceAgent.class)
                 .subAgents(farthestDistanceReadAgent, tableFormatAgent)
-                .outputName("message")
+                .outputKey("message")
                 .build();
     }
 
@@ -374,7 +374,7 @@ public class AppConfig {
         return AgenticServices.agentBuilder(FarthestDistanceReadAgent.class)
                 .chatModel(model)
                 .retrievalAugmentor(retrievalAugmentor)
-                .outputName("message")
+                .outputKey("message")
                 .build();
     }
 
@@ -382,7 +382,7 @@ public class AppConfig {
     public TableFormatAgent tableFormatAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(TableFormatAgent.class)
                 .chatModel(model)
-                .outputName("message")
+                .outputKey("message")
                 .build();
     }
 
@@ -397,12 +397,12 @@ public class AppConfig {
                 // 不能使用toolsSelector.getExecutors()。因为参数并不是Collection，而是对象...。这样set会认为是一个对象，而set不是一个tool
                 // 所以需要直接一个一个对象(wcImTools, writeArticleTools, formatAddressTools)传进去
                 .tools(wcImTools, writeArticleTools, formatAddressTools)
-                .outputName("message")
+                .outputKey("message")
                 .build();
     }
 
     @Bean
-    public ChatAssistant chatMasterAssistant(@Qualifier("opencode_go_qwen3.7_max") AnthropicChatModel model,
+    public ChatAssistant chatMasterAssistant(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
                                              @Qualifier("chatMemory-default") ChatMemory chatMemory,
                                              ChatMemoryProvider chatMemoryProvider,
                                              ToolsSelector toolsSelector,
