@@ -5,6 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
+import java.util.Map;
+
 /**
  * Hello world!
  * https://langchain4j.cn/get-started/
@@ -15,6 +17,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @MapperScan("com.rz.langchain.demo.server.mapper")
 public class ServerApp {
     public static void main(String[] args) {
+        Map<String, String> props = Helper.loadProperties();
+        System.out.println(props.get("ai.model.bailian.apiKey"));
+
         SpringApplication.run(ServerApp.class, args);
     }
 }

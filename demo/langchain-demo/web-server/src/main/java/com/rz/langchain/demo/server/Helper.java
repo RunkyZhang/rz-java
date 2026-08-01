@@ -1,10 +1,11 @@
 package com.rz.langchain.demo.server;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.lang.System.getenv;
 
 public class Helper {
 //    public static final String GEMINI_KEY = Optional.ofNullable(getenv("GOOGLE_AI_GEMINI_API_KEY"))
@@ -61,7 +62,7 @@ public class Helper {
         }
     }
 
-    public static Map<String, List<String>> refreshPoker(){
+    public static Map<String, List<String>> refreshPoker() {
         String[] values = {"3", "2", "A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4"};
         String[] suits = {"黑桃", "红桃", "草花", "方片"};
         String[] jokers = {"王【大】", "王【小】"};
@@ -89,6 +90,30 @@ public class Helper {
         result.put("A", playerA);
         result.put("B", playerB);
 
+        return result;
+    }
+
+    public static Map<String, String> loadProperties() {
+        String filePath = "web-server/src/main/resources/application.properties";
+        Map<String, String> result = new HashMap<>();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#") || line.startsWith("!")) {
+                    continue;
+                }
+
+                int eq = line.indexOf('=');
+                if (eq > 0) {
+                    String key = line.substring(0, eq).trim();
+                    String value = line.substring(eq + 1).trim();
+                    result.put(key, value);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load properties: " + filePath, e);
+        }
         return result;
     }
 }
