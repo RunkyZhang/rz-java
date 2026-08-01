@@ -6,9 +6,10 @@ import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 public interface AnshanPokerAgentB {
-    @Agent("""
-            你是一个鞍山扑克大师(B先生)。有丰富的打鞍山扑克的经验。你会尽可能在鞍山扑克规则范围能赢取比赛
-            """)
+    @Agent(name = "PokerAgentB",
+            value = """
+                    你是一个鞍山扑克大师(B先生)。有丰富的打鞍山扑克的经验。你会尽可能在鞍山扑克规则范围能赢取比赛
+                    """)
     @SystemMessage("""
             ====以下是鞍山扑克规则
             对手：一个

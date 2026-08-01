@@ -104,6 +104,7 @@ public class AppConfig {
     public RequestCategoryRouterAgent requestCategoryRouterAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(RequestCategoryRouterAgent.class)
                 .chatModel(model)
+                // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .outputName("category")
                 .build();
@@ -113,6 +114,7 @@ public class AppConfig {
     public LegalExpertAgent legalExpertAgent(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
         return AgenticServices.agentBuilder(LegalExpertAgent.class)
                 .chatModel(model)
+                // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .summarizedContext("medical", "technical")
                 .outputName("response")
@@ -124,7 +126,7 @@ public class AppConfig {
                                                  ContextSummarizer contextSummarizer) {
         return AgenticServices.agentBuilder(MedicalExpertAgent.class)
                 .chatModel(model)
-                // 看起来每次生成新的memoryId！！！
+                // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .context(agenticScope -> {
                     return contextSummarizer.summarize(agenticScope.contextAsConversation());
@@ -138,7 +140,7 @@ public class AppConfig {
                                                      ContextSummarizer contextSummarizer) {
         return AgenticServices.agentBuilder(TechnicalExpertAgent.class)
                 .chatModel(model)
-                // 看起来每次生成新的memoryId！！！
+                // 配合@MemoryId使用。或者使用.chatMemory
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .outputName("response")
                 .build();

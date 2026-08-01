@@ -1,10 +1,11 @@
 /////usr/bin/env jbang "$0" "$@" ; exit $?
 ////JAVA 17+
 ////COMPILE_OPTIONS --enable-preview -source 17
-////RUNTIME_OPTIONS --enable-preview
+////RUNTIME_OPTIONS --enable-preview -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 ////DEPS dev.langchain4j:langchain4j:1.13.0
 ////DEPS dev.langchain4j:langchain4j-core:1.13.0
 ////DEPS dev.langchain4j:langchain4j-google-ai-gemini:1.13.0
+////DEPS dev.langchain4j:langchain4j-agentic:1.13.0-beta23
 ////DEPS org.slf4j:slf4j-simple:2.0.17
 //
 ///*
@@ -22,35 +23,27 @@
 // */
 //
 //package com.rz.langchain.demo.server.harnees;
-//
-//import dev.langchain4j.agent.tool.P;
-//import dev.langchain4j.agent.tool.Tool;
-//import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-//import dev.langchain4j.service.AiServices;
-//import dev.langchain4j.service.SystemMessage;
-//import dev.langchain4j.service.UserMessage;
-//import dev.langchain4j.service.V;
-//
-//import java.io.BufferedReader;
-//import java.io.File;
-//import java.io.IOException;
-//import java.io.InputStreamReader;
-//import java.nio.file.FileSystems;
-//import java.nio.file.Files;
-//import java.nio.file.Path;
-//import java.util.ArrayList;
-//import java.util.Optional;
+//import java.nio.file.*;
+//import java.util.*;
+//import java.util.concurrent.*;
+//import java.util.regex.*;
+//import java.io.*;
 //import java.util.Scanner;
-//import java.util.concurrent.TimeUnit;
-//import java.util.regex.Matcher;
-//import java.util.regex.Pattern;
 //
 //import static java.lang.System.getenv;
 //import static java.nio.file.Files.*;
 //
+//import dev.langchain4j.agent.tool.*;
+//import dev.langchain4j.memory.chat.*;
+//import dev.langchain4j.model.chat.*;
+//import dev.langchain4j.model.googleai.*;
+//import dev.langchain4j.service.*;
+//import dev.langchain4j.agentic.*;
+//import dev.langchain4j.agentic.scope.*;
+//import dev.langchain4j.agentic.supervisor.*;
+//
 ///**
-// * nanocode_basic - minimal CLI coding agent, powered by LangChain4j.
-// * Original: https://github.com/1rgs/nanocode and https://github.com/maxandersen/nanocode
+// * nanocode_agentic - multi-agent coding assistant.
 // */
 //public class NanocodeAgentic {
 //
@@ -59,15 +52,16 @@
 //    static final String MODEL_NAME = Optional.ofNullable(getenv("MODEL"))
 //            .orElse("gemini-3-flash-preview");
 //
-//    private static final Scanner scanner = new Scanner(System.in);
 //    static final String RESET = "\033[0m", BOLD = "\033[1m", DIM = "\033[2m", ITALIC = "\033[3m";
 //    static final String BLUE = "\033[34m", CYAN = "\033[36m", GREEN = "\033[32m", RED = "\033[31m", YELLOW = "\033[93m";
 //    static final String MAGENTA = "\033[35m", UNDERLINE = "\033[4m", STRIKE = "\033[9m", CODE_BG = "\033[37;40m";
 //
+//    private static final Scanner scanner = new Scanner(System.in);
+//
 //// --- Tools ---
 //
-//    static class Tools {
-//        @Tool("Read file with line numbers (file path, not directory)")
+//    static class FileTools {
+//        @Tool("Read file with line numbers")
 //        public String read(@P("Path to the file") String path,
 //                           @P("Start line (optional)") Integer offset,
 //                           @P("Number of lines to read (optional)") Integer limit) throws IOException {
@@ -101,15 +95,10 @@
 //            var filePath = Path.of(path);
 //            var text = readString(filePath);
 //            if (!text.contains(old)) return "error: old_string not found";
-//
 //            long count = (text.length() - text.replace(old, "").length()) / old.length();
 //            boolean replaceAll = all != null && all;
-//            if (!replaceAll && count > 1)
-//                return "error: old_string appears " + count + " times, must be unique (use all=true)";
-//
-//            writeString(filePath, replaceAll
-//                    ? text.replace(old, repl)
-//                    : text.replaceFirst(Pattern.quote(old), Matcher.quoteReplacement(repl)));
+//            if (!replaceAll && count > 1) return "error: old_string appears " + count + " times, must be unique (use all=true)";
+//            writeString(filePath, replaceAll ? text.replace(old, repl) : text.replaceFirst(Pattern.quote(old), Matcher.quoteReplacement(repl)));
 //            System.out.println("  " + DIM + "⎿  ok" + RESET);
 //            return "ok";
 //        }
@@ -124,11 +113,8 @@
 //            try (var walk = walk(base)) {
 //                var files = walk.filter(Files::isRegularFile).filter(matcher::matches)
 //                        .sorted((a, b) -> {
-//                            try {
-//                                return getLastModifiedTime(b).compareTo(getLastModifiedTime(a));
-//                            } catch (IOException e) {
-//                                return 0;
-//                            }
+//                            try { return getLastModifiedTime(b).compareTo(getLastModifiedTime(a)); }
+//                            catch (IOException e) { return 0; }
 //                        })
 //                        .map(Path::toString).toList();
 //                var result = files.isEmpty() ? "none" : String.join("\n", files);
@@ -158,29 +144,9 @@
 //            System.out.println("  " + DIM + "⎿  " + preview(result, 60) + RESET);
 //            return result;
 //        }
+//    }
 //
-//        @Tool("Searches the web for up-to-date information on a given topic using Google Search")
-//        public String websearch(@P("The search query") String query) {
-//            System.out.println("\n" + GREEN + "⏺ WebSearch" + RESET + "(" + DIM + query + RESET + ")");
-//            var searchModel = GoogleAiGeminiChatModel.builder()
-//                    .apiKey(GEMINI_KEY)
-//                    .modelName(MODEL_NAME)
-//                    .allowGoogleSearch(true)
-//                    .build();
-//            return searchModel.chat(query);
-//        }
-//
-//        @Tool("Fetch the content of a specific URL")
-//        public String webfetch(@P("The URL to fetch") String url) {
-//            System.out.println("\n" + GREEN + "⏺ WebFetch" + RESET + "(" + DIM + url + RESET + ")");
-//            var fetchModel = GoogleAiGeminiChatModel.builder()
-//                    .apiKey(GEMINI_KEY)
-//                    .modelName(MODEL_NAME)
-//                    .allowUrlContext(true)
-//                    .build();
-//            return fetchModel.chat("Please extract and summarize the content of this URL: " + url);
-//        }
-//
+//    static class SystemTools {
 //        @Tool("Run shell command")
 //        public String bash(@P("Shell command to run") String cmd,
 //                           @P("Working directory (optional)") String dir) throws Exception {
@@ -204,11 +170,53 @@
 //        }
 //    }
 //
-//// --- Assistant ---
+//    static class WebTools {
+//        @Tool("Search the web using Google Search")
+//        public String search(@P("The search query") String query) {
+//            System.out.println("\n" + GREEN + "⏺ WebSearch" + RESET + "(" + DIM + query + RESET + ")");
+//            var searchModel = GoogleAiGeminiChatModel.builder()
+//                    .apiKey(GEMINI_KEY)
+//                    .modelName(MODEL_NAME)
+//                    .allowGoogleSearch(true)
+//                    .build();
+//            return searchModel.chat(query);
+//        }
 //
-//    interface Assistant {
-//        @SystemMessage("Concise coding assistant. cwd: {{cwd}}")
-//        String chat(@V("cwd") String cwd, @UserMessage String userMessage);
+//        @Tool("Fetch the content of a specific URL")
+//        public String fetch(@P("The URL to fetch") String url) {
+//            System.out.println("\n" + GREEN + "⏺ WebFetch" + RESET + "(" + DIM + url + RESET + ")");
+//            var fetchModel = GoogleAiGeminiChatModel.builder()
+//                    .apiKey(GEMINI_KEY)
+//                    .modelName(MODEL_NAME)
+//                    .allowUrlContext(true)
+//                    .build();
+//            return fetchModel.chat("Please extract and summarize the content of this URL: " + url);
+//        }
+//    }
+//
+//// --- Agent Definitions ---
+//
+//    public interface FileAgent {
+//        @Agent(name = "file_specialist", description = "Expert in file operations: read, write, edit, search.")
+//        @UserMessage("Perform this file task: {{task}}")
+//        String work(@V("task") String task);
+//    }
+//
+//    public interface SystemAgent {
+//        @Agent(name = "system_specialist", description = "Expert in executing shell commands and managing the environment.")
+//        @UserMessage("Perform this system task: {{task}}")
+//        String work(@V("task") String task);
+//    }
+//
+//    public interface WebAgent {
+//        @Agent(name = "web_specialist", description = "Expert in searching the web and fetching content from URLs.")
+//        @UserMessage("Perform this web task: {{task}}")
+//        String work(@V("task") String task);
+//    }
+//
+//    public interface NanocodeSupervisor extends AgenticScopeAccess {
+//        @Agent(name = "supervisor")
+//        String chat(@V("request") String request);
 //    }
 //
 //// --- UI Utils ---
@@ -230,32 +238,30 @@
 //    }
 //
 //    static String markdown(String md) {
-//        if (md == null) return "";
+//        if (md == null || md.isBlank()) return "";
 //        var blocks = new ArrayList<String>();
 //        var m = Pattern.compile("(?s)```(\\w+)?\\n(.*?)\\n```").matcher(md);
 //        var sb = new StringBuilder();
 //        while (m.find()) {
 //            var lang = m.group(1) == null ? "" : m.group(1);
 //            var content = m.group(2);
-//            var formatted = (lang.isEmpty() ? "" : ITALIC + BOLD + lang + RESET + "\n") +
-//                    content.replaceAll("(?m)^", CODE_BG) + RESET + "\n";
+//            var formatted = (lang.isEmpty() ? "" : ITALIC + BOLD + lang + RESET + "\n") + content.replaceAll("(?m)^", CODE_BG) + RESET + "\n";
 //            m.appendReplacement(sb, Matcher.quoteReplacement("%%BLOCK_CODE_" + blocks.size() + "%%"));
 //            blocks.add(formatted);
 //        }
 //        m.appendTail(sb);
 //        var res = sb.toString()
-//                .replaceAll("\\*\\*(.*?)\\*\\*", BOLD + "$1" + RESET) // Bold
-//                .replaceAll("\\*(.*?)\\*", ITALIC + "$1" + RESET) // Italic
-//                .replaceAll("__(.*?)__", UNDERLINE + "$1" + RESET) // Underline
-//                .replaceAll("~~(.*?)~~", STRIKE + "$1" + RESET) // Strikethrough
-//                .replaceAll("(?m)^> ?(.*)", ITALIC + BLUE + BOLD + "> $1" + RESET) // Blockquote
-//                .replaceAll("(?m)^([\\d]+\\.|-|\\*) (.*)", MAGENTA + BOLD + "$1" + RESET + " $2") // Lists
-//                .replaceAll("(?m)^(#{1,6}) (.*)", CYAN + BOLD + "$1 $2" + RESET) // Headers
-//                .replaceAll("(?m)^(.*?\n={2,}\n)", CYAN + BOLD + "$1" + RESET) // Headers (===)
-//                .replaceAll("(?m)^(.*?\n-{2,}\n)", CYAN + BOLD + "$1" + RESET) // Headers (---)
-//                .replaceAll("!?\\[(.*?)]\\((.*?)\\)", BLUE + "$1" + RESET + " (" + BLUE + UNDERLINE + "$2" + RESET + ")"); // Links/Images
-//        for (int i = 0; i < blocks.size(); i++)
-//            res = res.replace("%%BLOCK_CODE_" + i + "%%", blocks.get(i));
+//                .replaceAll("\\*\\*(.*?)\\*\\*", BOLD + "$1" + RESET)
+//                .replaceAll("\\*(.*?)\\*", ITALIC + "$1" + RESET)
+//                .replaceAll("__(.*?)__", UNDERLINE + "$1" + RESET)
+//                .replaceAll("~~(.*?)~~", STRIKE + "$1" + RESET)
+//                .replaceAll("(?m)^> ?(.*)", ITALIC + BLUE + BOLD + "> $1" + RESET)
+//                .replaceAll("(?m)^([\\d]+\\.|-|\\*) (.*)", MAGENTA + BOLD + "$1" + RESET + " $2")
+//                .replaceAll("(?m)^(#{1,6}) (.*)", CYAN + BOLD + "$1 $2" + RESET)
+//                .replaceAll("(?m)^(.*?\n={2,}\n)", CYAN + BOLD + "$1" + RESET)
+//                .replaceAll("(?m)^(.*?\n-{2,}\n)", CYAN + BOLD + "$1" + RESET)
+//                .replaceAll("!?\\[(.*?)]\\((.*?)\\)", BLUE + "$1" + RESET + " (" + BLUE + UNDERLINE + "$2" + RESET + ")");
+//        for (int i = 0; i < blocks.size(); i++) res = res.replace("%%BLOCK_CODE_" + i + "%%", blocks.get(i));
 //        return res;
 //    }
 //
@@ -268,7 +274,7 @@
 //        }
 //
 //        var cwd = System.getProperty("user.dir");
-//        System.out.println(BOLD + "nanocode" + RESET + " | " + DIM + MODEL_NAME + " (Google AI Gemini) | " + cwd + RESET + "\n");
+//        System.out.println(BOLD + "nanocode" + RESET + " | " + DIM + MODEL_NAME + " (Agentic Supervisor) | " + cwd + RESET + "\n");
 //
 //        var model = GoogleAiGeminiChatModel.builder()
 //                .apiKey(GEMINI_KEY)
@@ -277,13 +283,27 @@
 //                .returnThinking(true)
 //                .build();
 //
-//        var memory = MessageWindowChatMemory.withMaxMessages(20);
-//        var tools = new Tools();
-//
-//        var assistant = AiServices.builder(Assistant.class)
+//        // Build specialized AI agents
+//        var fileAgent = AgenticServices.agentBuilder(FileAgent.class)
 //                .chatModel(model)
-//                .chatMemory(memory)
-//                .tools(tools)
+//                .tools(new FileTools())
+//                .build();
+//
+//        var systemAgent = AgenticServices.agentBuilder(SystemAgent.class)
+//                .chatModel(model)
+//                .tools(new SystemTools())
+//                .build();
+//
+//        var webAgent = AgenticServices.agentBuilder(WebAgent.class)
+//                .chatModel(model)
+//                .tools(new WebTools())
+//                .build();
+//
+//        // Orchestrate with Supervisor
+//        SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
+//                .chatModel(model)
+//                .subAgents(fileAgent, systemAgent, webAgent)
+//                .responseStrategy(SupervisorResponseStrategy.SUMMARY)
 //                .build();
 //
 //        while (true) {
@@ -298,13 +318,15 @@
 //                if (input.isEmpty()) continue;
 //                if (input.equals("/q") || input.equals("exit")) break;
 //                if (input.equals("/c")) {
-//                    memory.clear();
+//                    ((AgenticScopeAccess)supervisor).evictAgenticScope("default");
 //                    System.out.println(GREEN + "⏺ Cleared" + RESET);
 //                    continue;
 //                }
 //
-//                var response = assistant.chat(cwd, input);
-//                System.out.println("\n" + CYAN + "⏺" + RESET + " " + markdown(response));
+//                var response = supervisor.invoke(input);
+//                if (response != null && !response.isBlank()) {
+//                    System.out.println("\n" + CYAN + "⏺" + RESET + " " + markdown(response));
+//                }
 //                System.out.println();
 //            } catch (Exception e) {
 //                System.out.println(RED + "⏺ Error: " + e.getMessage() + RESET);
