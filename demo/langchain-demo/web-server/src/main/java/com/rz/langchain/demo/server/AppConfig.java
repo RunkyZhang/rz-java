@@ -104,7 +104,7 @@ public class AppConfig {
     public RequestCategoryRouterAgent requestCategoryRouterAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(RequestCategoryRouterAgent.class)
                 .chatModel(model)
-                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .outputName("category")
                 .build();
     }
@@ -114,16 +114,21 @@ public class AppConfig {
         return AgenticServices.agentBuilder(LegalExpertAgent.class)
                 .chatModel(model)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .summarizedContext("medical", "technical")
                 .outputName("response")
                 .build();
     }
 
     @Bean
-    public MedicalExpertAgent medicalExpertAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+    public MedicalExpertAgent medicalExpertAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                                                 ContextSummarizer contextSummarizer) {
         return AgenticServices.agentBuilder(MedicalExpertAgent.class)
                 .chatModel(model)
+                // 看起来每次生成新的memoryId！！！
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .summarizedContext("legal", "technical")
+                .context(agenticScope -> {
+                    return contextSummarizer.summarize(agenticScope.contextAsConversation());
+                })
                 .outputName("response")
                 .build();
     }
@@ -133,10 +138,8 @@ public class AppConfig {
                                                      ContextSummarizer contextSummarizer) {
         return AgenticServices.agentBuilder(TechnicalExpertAgent.class)
                 .chatModel(model)
+                // 看起来每次生成新的memoryId！！！
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .context(agenticScope -> {
-                    return contextSummarizer.summarize(agenticScope.contextAsConversation());
-                })
                 .outputName("response")
                 .build();
     }

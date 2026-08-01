@@ -155,7 +155,7 @@ public class BasicController {
 //        return foodsAndMovies.toString();
 
         // 条件agent
-        return simpleRouterAgent.ask(requestDto.getMessage());
+        return simpleRouterAgent.ask("default", requestDto.getMessage());
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
