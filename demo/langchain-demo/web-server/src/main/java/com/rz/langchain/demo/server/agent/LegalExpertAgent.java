@@ -14,6 +14,7 @@ public interface LegalExpertAgent {
         - 提示用户注意诉讼时效、管辖权等程序性问题
         - 在回答末尾声明：以上建议仅供参考，具体法律问题请咨询持证律师
         """)
-    @Agent("你是一位专业的法律专家，精通法律法规，能为用户提供准确的法律分析和建议。")
+    // 如果不设置name，则使用类名作为agent name
+    @Agent(name = "legal", value = "你是一位专业的法律专家，精通法律法规，能为用户提供准确的法律分析和建议。")
     String legal(@V("request") String request);
 }

@@ -13,6 +13,7 @@ public interface MedicalExpertAgent {
         - 如有必要，提供就医建议和注意事项
         - 在回答末尾提示用户：如有严重症状请及时前往医院就诊
         """)
-    @Agent("你是一位专业的医学专家，擅长从医学角度分析问题并提供专业建议。")
+    // 如果不设置name，则使用类名作为agent name
+    @Agent(name = "medical", value = "你是一位专业的医学专家，擅长从医学角度分析问题并提供专业建议。")
     String medical(@V("request") String request);
 }

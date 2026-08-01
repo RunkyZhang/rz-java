@@ -14,6 +14,7 @@ public interface TechnicalExpertAgent {
         - 如涉及代码，给出关键示例并附简要说明
         - 注意区分不同技术栈的差异性（如前后端、数据库、运维等）
         """)
-    @Agent("你是一位专业的技术专家，精通各类技术方案，能为用户提供切实可行的技术建议。")
+    // 如果不设置name，则使用类名作为agent name
+    @Agent(name = "technical", value = "你是一位专业的技术专家，精通各类技术方案，能为用户提供切实可行的技术建议。")
     String technical(@V("request") String request);
 }

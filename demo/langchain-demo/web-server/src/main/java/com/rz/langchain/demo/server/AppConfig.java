@@ -10,7 +10,10 @@ import com.rz.langchain.demo.server.dto.Tuple2;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
+import com.rz.langchain.demo.server.tools.FormatAddressTools;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
+import com.rz.langchain.demo.server.tools.WcImTools;
+import com.rz.langchain.demo.server.tools.WriteArticleTools;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
@@ -110,7 +113,7 @@ public class AppConfig {
     public LegalExpertAgent legalExpertAgent(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model) {
         return AgenticServices.agentBuilder(LegalExpertAgent.class)
                 .chatModel(model)
-                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .outputName("response")
                 .build();
     }
@@ -119,16 +122,29 @@ public class AppConfig {
     public MedicalExpertAgent medicalExpertAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
         return AgenticServices.agentBuilder(MedicalExpertAgent.class)
                 .chatModel(model)
-                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .summarizedContext("legal", "technical")
                 .outputName("response")
                 .build();
     }
 
     @Bean
-    public TechnicalExpertAgent technicalExpertAgent(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model) {
+    public TechnicalExpertAgent technicalExpertAgent(@Qualifier("volcengine_doubao_seed_2.0_pro") OpenAiChatModel model,
+                                                     ContextSummarizer contextSummarizer) {
         return AgenticServices.agentBuilder(TechnicalExpertAgent.class)
                 .chatModel(model)
-                //.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(50))
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .context(agenticScope -> {
+                    return contextSummarizer.summarize(agenticScope.contextAsConversation());
+                })
+                .outputName("response")
+                .build();
+    }
+
+    @Bean
+    public ContextSummarizer contextSummarizer(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model) {
+        return AgenticServices.agentBuilder(ContextSummarizer.class)
+                .chatModel(model)
                 .outputName("response")
                 .build();
     }
@@ -182,6 +198,8 @@ public class AppConfig {
                 .subAgents(anshanPokerAgentA, anshanPokerAgentB)
                 .maxIterations(50)
                 .errorHandler((errorContext) -> {
+                    // 无法进入errorHandler处理当在beforeCall，exitCondition中跑出的异常。只有llm调用失败才会进入处理
+                    // 蛋疼。但是可以通过scope变量中的约定让llm忽略这次请求
                     log.error("errorContext: {}", errorContext);
                     return ErrorRecoveryResult.retry();
                 })
@@ -366,10 +384,14 @@ public class AppConfig {
     // 工具不生效，不知道是不是需要升级版本
     @Bean
     public ToolsAgent toolsAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
-                                 ToolsSelector toolsSelector) {
+                                 WcImTools wcImTools,
+                                 WriteArticleTools writeArticleTools,
+                                 FormatAddressTools formatAddressTools) {
         return AgenticServices.agentBuilder(ToolsAgent.class)
                 .chatModel(model)
-                .tools(toolsSelector.getExecutors()) // 没生效 TODO：
+                // 不能使用toolsSelector.getExecutors()。因为参数并不是Collection，而是对象...。这样set会认为是一个对象，而set不是一个tool
+                // 所以需要直接一个一个对象(wcImTools, writeArticleTools, formatAddressTools)传进去
+                .tools(wcImTools, writeArticleTools, formatAddressTools)
                 .outputName("message")
                 .build();
     }
