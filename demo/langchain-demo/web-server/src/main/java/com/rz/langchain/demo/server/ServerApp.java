@@ -17,7 +17,7 @@ import java.util.Map;
 @MapperScan("com.rz.langchain.demo.server.mapper")
 public class ServerApp {
     public static void main(String[] args) {
-        Map<String, String> props = Helper.loadProperties();
+        Map<String, String> props = Helper.loadProperties(false);
         System.out.println(props.get("ai.model.bailian.apiKey"));
 
         SpringApplication.run(ServerApp.class, args);

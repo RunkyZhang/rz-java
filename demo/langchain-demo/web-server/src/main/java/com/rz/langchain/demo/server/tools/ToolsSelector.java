@@ -21,12 +21,15 @@ public class ToolsSelector {
     private WriteArticleTools writeArticleTools;
     @Resource
     private FormatAddressTools formatAddressTools;
+    @Resource
+    private WebTools webTools;
 
     @PostConstruct
     private void init() {
         putTools(ToolSpecifications.toolSpecificationsFrom(wcImTools), wcImTools);
         putTools(ToolSpecifications.toolSpecificationsFrom(writeArticleTools), writeArticleTools);
         putTools(ToolSpecifications.toolSpecificationsFrom(formatAddressTools), formatAddressTools);
+        putTools(ToolSpecifications.toolSpecificationsFrom(webTools), webTools);
     }
 
     public Object getExecutor(String name) {

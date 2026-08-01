@@ -10,10 +10,7 @@ import com.rz.langchain.demo.server.dto.Tuple2;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
-import com.rz.langchain.demo.server.tools.FormatAddressTools;
-import com.rz.langchain.demo.server.tools.ToolsSelector;
-import com.rz.langchain.demo.server.tools.WcImTools;
-import com.rz.langchain.demo.server.tools.WriteArticleTools;
+import com.rz.langchain.demo.server.tools.*;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
@@ -391,12 +388,13 @@ public class AppConfig {
     public ToolsAgent toolsAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
                                  WcImTools wcImTools,
                                  WriteArticleTools writeArticleTools,
-                                 FormatAddressTools formatAddressTools) {
+                                 FormatAddressTools formatAddressTools,
+                                 WebTools webTools) {
         return AgenticServices.agentBuilder(ToolsAgent.class)
                 .chatModel(model)
                 // 不能使用toolsSelector.getExecutors()。因为参数并不是Collection，而是对象...。这样set会认为是一个对象，而set不是一个tool
                 // 所以需要直接一个一个对象(wcImTools, writeArticleTools, formatAddressTools)传进去
-                .tools(wcImTools, writeArticleTools, formatAddressTools)
+                .tools(wcImTools, writeArticleTools, formatAddressTools, webTools)
                 .outputKey("message")
                 .build();
     }

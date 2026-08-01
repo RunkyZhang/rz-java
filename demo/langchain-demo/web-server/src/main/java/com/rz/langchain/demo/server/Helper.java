@@ -1,5 +1,7 @@
 package com.rz.langchain.demo.server;
 
+import org.springframework.util.CollectionUtils;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -93,7 +95,13 @@ public class Helper {
         return result;
     }
 
-    public static Map<String, String> loadProperties() {
+    public static Map<String, String> applicationProperties = new HashMap<>();
+
+    public static Map<String, String> loadProperties(boolean refresh) {
+        if (!refresh && !CollectionUtils.isEmpty(applicationProperties)) {
+            return applicationProperties;
+        }
+
         String filePath = "web-server/src/main/resources/application.properties";
         Map<String, String> result = new HashMap<>();
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath))) {
@@ -114,6 +122,8 @@ public class Helper {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load properties: " + filePath, e);
         }
-        return result;
+
+        applicationProperties = result;
+        return applicationProperties;
     }
 }
