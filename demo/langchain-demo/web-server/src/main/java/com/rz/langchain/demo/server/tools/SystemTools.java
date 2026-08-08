@@ -3,6 +3,7 @@ package com.rz.langchain.demo.server.tools;
 import com.rz.langchain.demo.server.Helper;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+@Service
 public class SystemTools {
     @Tool("Run shell command")
     public String bash(@P("Shell command to run") String cmd,

@@ -26,6 +26,7 @@ import com.rz.langchain.demo.server.assistant.FormatAddressAssistant;
 import com.rz.langchain.demo.server.assistant.LocalAssistant;
 import com.rz.langchain.demo.server.dto.*;
 import com.rz.langchain.demo.server.filter.FilterMapper;
+import com.rz.langchain.demo.server.harnees.SimpleHarnessAgent;
 import com.rz.langchain.demo.server.mapper.EmbeddingMetadataMapper;
 import com.rz.langchain.demo.server.rpc.RpcProxy;
 import com.rz.langchain.demo.server.tools.FormatAddressTools;
@@ -132,12 +133,15 @@ public class BasicController {
     private SimpleParallelAgent simpleParallelAgent;
     @Resource
     private SimpleRouterAgent simpleRouterAgent;
+    @Resource
+    private SimpleHarnessAgent simpleHarnessAgent;
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
     // 测试SimpleSequenceAgent(会生成树)：《最远的距离》小说中涉及到哪些地址
     // 测试SimpleLoopAgent
-    @PostMapping("/chatWithAgent")
+    // 测试SimpleHarnessAgent：你帮我搜索AgentScope Java 2.0相关技术文档。然后总结一遍学习博客。然后发给张仁杰到企业微信
+    @PostMapping("/chat")
     @ResponseBody
     public String chatWithAgent(@RequestBody ChatMessagesDto requestDto) {
         // 顺序多agent
@@ -155,14 +159,16 @@ public class BasicController {
 //        return foodsAndMovies.toString();
 
         // 条件agent
-        return simpleRouterAgent.ask("default", requestDto.getMessage());
+//        return simpleRouterAgent.ask("default", requestDto.getMessage());
+
+        return simpleHarnessAgent.chat(requestDto.getMessage());
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
     // 测试：帮我写一个短文，内容是【父子游崂山】，风格是父子情深，长度是500字”，关键元素是回忆，夕阳，温情？
     // 测试：帮我发一条微企业微信消息给张仁杰，内容是建议他中午在上海复地活力城商场买点什么好吃的回家
     // 测试：快递请邮寄到上海市浦东新区陆家嘴环路1000号恒生银行大厦18层，13688889999王五先生收就好了。电话记得要脱敏，如果人没接电话那么就把快递请放前台，勿打电话
-    @PostMapping("/chat")
+    @PostMapping("/chatWithAssistant")
     @ResponseBody
     public String chatWithAssistant(@RequestBody ChatMessagesDto requestDto) {
         // chatMasterAgent.chat(requestDto.getMessage())

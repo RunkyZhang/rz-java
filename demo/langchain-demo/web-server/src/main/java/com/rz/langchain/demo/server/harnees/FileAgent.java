@@ -5,7 +5,7 @@ import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 public interface FileAgent {
-    @Agent(name = "file_specialist", description = "Expert in file operations: read, write, edit, search.")
-    @UserMessage("Perform this file task: {{task}}")
+    @Agent(name = "file_specialist", description = "文件操作专家：读取、写入、编辑、搜索。")
+    @UserMessage("执行这个文件任务：{{task}}")
     String work(@V("task") String task);
 }

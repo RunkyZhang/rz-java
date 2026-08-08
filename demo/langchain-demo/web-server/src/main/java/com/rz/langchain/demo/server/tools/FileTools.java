@@ -3,6 +3,7 @@ package com.rz.langchain.demo.server.tools;
 import com.rz.langchain.demo.server.Helper;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -15,6 +16,7 @@ import java.util.regex.Pattern;
 import static java.nio.file.Files.*;
 import static java.nio.file.Files.readAllLines;
 
+@Service
 public class FileTools {
     @Tool("Read file with line numbers")
     public String read(@P("Path to the file") String path,

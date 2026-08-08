@@ -9,6 +9,7 @@ import com.rz.langchain.demo.server.dto.RequestCategoryEnum;
 import com.rz.langchain.demo.server.dto.Tuple2;
 import com.rz.langchain.demo.server.filter.Filter4UserMessage;
 import com.rz.langchain.demo.server.filter.FilterMapper;
+import com.rz.langchain.demo.server.harnees.*;
 import com.rz.langchain.demo.server.rag.BailianScoringModel;
 import com.rz.langchain.demo.server.tools.*;
 import dev.langchain4j.agentic.AgenticServices;
@@ -74,6 +75,71 @@ public class AppConfig {
     public String volcengineApiKey;
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
+
+
+    @Bean
+    public SimpleHarnessAgent simpleHarnessAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                                                 @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                                                 FileAgent fileAgent,
+                                                 SystemAgent systemAgent,
+                                                 WebAgent webAgent,
+                                                 NotifyAgent notifyAgent) {
+        return AgenticServices.supervisorBuilder(SimpleHarnessAgent.class)
+                .chatModel(model)
+                .chatMemoryProvider(o -> chatMemory)
+                .subAgents(fileAgent, systemAgent, webAgent, notifyAgent)
+                .maxAgentsInvocations(30)
+                .outputKey("response")
+                .build();
+    }
+
+    @Bean
+    public FileAgent fileAgent(@Qualifier("deepSeek_v4_pro") OpenAiChatModel model,
+                               @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                               FileTools fileTools) {
+        return AgenticServices.agentBuilder(FileAgent.class)
+                .chatModel(model)
+                .chatMemory(chatMemory)
+                .tools(fileTools)
+                .outputKey("response")
+                .build();
+    }
+
+    @Bean
+    public SystemAgent systemAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                                   @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                                   SystemTools systemTools) {
+        return AgenticServices.agentBuilder(SystemAgent.class)
+                .chatModel(model)
+                .chatMemory(chatMemory)
+                .tools(systemTools)
+                .outputKey("response")
+                .build();
+    }
+
+    @Bean
+    public WebAgent webAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                             @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                             WebTools webTools) {
+        return AgenticServices.agentBuilder(WebAgent.class)
+                .chatModel(model)
+                .chatMemory(chatMemory)
+                .tools(webTools)
+                .outputKey("response")
+                .build();
+    }
+
+    @Bean
+    public NotifyAgent notifyAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
+                                   @Qualifier("chatMemory-default") ChatMemory chatMemory,
+                                   WcImTools wcImTools) {
+        return AgenticServices.agentBuilder(NotifyAgent.class)
+                .chatModel(model)
+                .chatMemory(chatMemory)
+                .tools(wcImTools)
+                .outputKey("response")
+                .build();
+    }
 
     @Bean
     public SimpleRouterAgent simpleRouterAgent(RequestCategoryRouterAgent requestCategoryRouterAgent,
@@ -485,6 +551,7 @@ public class AppConfig {
                 .baseUrl("https://api.deepseek.com/anthropic")
                 .apiKey(deepseekApiKey)
                 .modelName("deepseek-v4-flash")
+                .maxTokens(8192)
                 .returnThinking(true)
                 .timeout(Duration.ofSeconds(300))
                 .logRequests(true)
