@@ -9,7 +9,6 @@ import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.service.tool.ToolExecutionResult;
 import lombok.extern.slf4j.Slf4j;
@@ -46,20 +45,33 @@ public class WebTools {
                 .transport(transport)
                 .build()) {
 
-            String toolName = mcpClient.listTools().stream()
-                    .filter(t -> t.name().toLowerCase().contains("search"))
+            ToolSpecification toolSpecification = mcpClient.listTools().stream()
+                    .filter(o -> {
+                        if (null == o || StringUtils.isBlank(o.name())) {
+                            return false;
+                        }
+
+                        return o.name().toLowerCase().contains("search");
+                    })
                     .findFirst()
-                    .map(ToolSpecification::name)
-                    .orElseThrow();
-            log.info("WebSearch tool: {}", toolName);
+                    .orElse(null);
+            if (null == toolSpecification) {
+                return "cannot to search web; the mcp is not a web search tool";
+            }
+            log.info("tool name: {}", toolSpecification.name());
 
             String arguments = JacksonHelper.toJson(Map.of("query", query), false);
             ToolExecutionRequest request = ToolExecutionRequest.builder()
-                    .name(toolName)
+                    .name(toolSpecification.name())
                     .arguments(arguments)
                     .build();
 
-            return mcpClient.executeTool(request, null).toString();
+            ToolExecutionResult toolExecutionResult = mcpClient.executeTool(request, null);
+            if (null == toolExecutionResult || toolExecutionResult.isError()) {
+                return "failed to search query on web: " + query;
+            } else {
+                return toolExecutionResult.toString();
+            }
         }
     }
 
@@ -67,7 +79,7 @@ public class WebTools {
     @SuppressWarnings("removal")
     public String parser(@P("要获取的 URL") String url) throws Exception {
         // HttpMcpTransport被Deprecated弃用了。但是这个mcp就是用sse协议，所以只能使用HttpMcpTransport
-        McpTransport transport = HttpMcpTransport.builder()
+        McpTransport transport = dev.langchain4j.mcp.client.transport.http.HttpMcpTransport.builder()
                 .sseUrl("https://dashscope.aliyuncs.com/api/v1/mcps/WebParser/sse")
                 .customHeaders(Map.of("Authorization", "Bearer " + getApiKey()))
                 .timeout(Duration.ofSeconds(30))
@@ -88,7 +100,6 @@ public class WebTools {
                     })
                     .findFirst()
                     .orElse(null);
-
             if (null == toolSpecification) {
                 return "cannot to parser(fetch) web; the mcp is not a web parser(fetch) tool";
             }
