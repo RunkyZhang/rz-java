@@ -15,6 +15,8 @@ import com.rz.langchain.demo.server.tools.*;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
+import dev.langchain4j.agentic.supervisor.SupervisorContextStrategy;
+import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -88,6 +90,15 @@ public class AppConfig {
                 .chatModel(model)
                 .chatMemoryProvider(o -> chatMemory)
                 .subAgents(fileAgent, systemAgent, webAgent, notifyAgent)
+                .supervisorContext("策略：优先使用内部工具；Thinking（思考）使用中文")
+                // CHAT_MEMORY（默认）：planner 只看 chatMemory 的完整历史（你配的 maxMessages=25）
+                // SUMMARIZATION：chatMemory + Summarizer（把与各 subagent 的交互压缩成摘要注入请求）
+                // CHAT_MEMORY_AND_SUMMARIZATION：同上（在已传 chatMemoryProvider 的情况下，和 SUMMARIZATION 效果一样）
+                .contextGenerationStrategy(SupervisorContextStrategy.SUMMARIZATION)
+                // LAST（默认）：直接返回最后一个被调 subagent 的输出，不额外调 LLM
+                // SUMMARY：返回 planner 决定 done 时生成的 response（对全部交互的回顾总结）
+                // SCORED：额外用一次 LLM 给"最后 subagent 输出"和"planner 总结"打分，返回分高的（最稳但最贵）
+                .responseStrategy(SupervisorResponseStrategy.LAST)
                 .maxAgentsInvocations(30)
                 .outputKey("response")
                 .build();
