@@ -18,7 +18,6 @@ package com.rz.langchain.demo.server.controller;
 
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.tokenizer.StandardTokenizer;
-import com.rz.langchain.demo.server.Helper;
 import com.rz.langchain.demo.server.JacksonHelper;
 import com.rz.langchain.demo.server.agent.*;
 import com.rz.langchain.demo.server.assistant.ChatAssistant;
@@ -33,6 +32,7 @@ import com.rz.langchain.demo.server.tools.FormatAddressTools;
 import com.rz.langchain.demo.server.tools.ToolsSelector;
 import dev.langchain4j.Experimental;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.loader.UrlDocumentLoader;
 import dev.langchain4j.data.document.parser.TextDocumentParser;
@@ -76,6 +76,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -85,6 +86,7 @@ import java.util.stream.Collectors;
 @Controller
 public class BasicController {
     private static Map<String, DocumentDto> savedDocuments = new HashMap<>();
+    private final Map<String, ResultWithAgenticScope<String>> suspendedResults = new ConcurrentHashMap<>();
 
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
@@ -138,12 +140,45 @@ public class BasicController {
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
+    // 测试：simpleHarnessAgent：帮我发一条企业微信消息，内容是hello。会交互让输入发给谁
+    @PostMapping("/chat")
+    @ResponseBody
+    public ChatResult chatWithHarness(@RequestBody ChatMessagesDto requestDto) {
+        String memoryId = UUID.randomUUID().toString();
+        ResultWithAgenticScope<String> result = simpleHarnessAgent.chat(memoryId, requestDto.getMessage());
+        if (result.suspended()) {
+            suspendedResults.put(memoryId, result);
+            String question = result.agenticScope().readState("pendingQuestion", "");
+            log.info("HITL question: {}", question);
+            return new ChatResult(true, memoryId, question);
+        }
+        return new ChatResult(false, null, result.result());
+    }
+
+    @PostMapping("/chatWaitAnswered")
+    @ResponseBody
+    public ChatResult chatWaitAnswered(@RequestBody ChatMessagesDto chatMessagesDto) {
+        ResultWithAgenticScope<String> result = suspendedResults.remove(chatMessagesDto.getMemoryId());
+        if (result == null) {
+            return new ChatResult(false, null, "会话已过期或不存在，请重新提问");
+        }
+        result.agenticScope().writeState("userInput", chatMessagesDto.getAnswer());
+        result = result.completePendingResponse(chatMessagesDto.getAnswer());
+        if (result.suspended()) {
+            suspendedResults.put(chatMessagesDto.getMemoryId(), result);
+            String question = result.agenticScope().readState("pendingQuestion", "");
+            log.info("HITL question: {}", question);
+            return new ChatResult(true, chatMessagesDto.getMemoryId(), question);
+        }
+        return new ChatResult(false, null, result.result());
+    }
+
     // 测试SimpleSequenceAgent(会生成树)：《最远的距离》小说中涉及到哪些地址
     // 测试SimpleLoopAgent
     // 测试SimpleHarnessAgent：你帮我搜索AgentScope Java 2.0相关技术文档。然后总结一遍学习博客。然后发给张仁杰到企业微信
-    @PostMapping("/chat")
+    @PostMapping("/chatWithAgents")
     @ResponseBody
-    public String chatWithAgent(@RequestBody ChatMessagesDto requestDto) {
+    public ChatResult chatWithAgents(@RequestBody ChatMessagesDto requestDto) {
         // 顺序多agent
 //        return simpleSequenceAgent.chat(requestDto.getMessage());
 
@@ -159,9 +194,8 @@ public class BasicController {
 //        return foodsAndMovies.toString();
 
         // 条件agent
-//        return simpleRouterAgent.ask("default", requestDto.getMessage());
-
-        return simpleHarnessAgent.chat(requestDto.getMessage());
+        String content = simpleRouterAgent.ask("default", requestDto.getMessage());
+        return new ChatResult(false, null, content);
     }
 
     // 测试（知识库，下来列表需要选择）：林曦都和谁谈过恋爱？
@@ -170,7 +204,7 @@ public class BasicController {
     // 测试：快递请邮寄到上海市浦东新区陆家嘴环路1000号恒生银行大厦18层，13688889999王五先生收就好了。电话记得要脱敏，如果人没接电话那么就把快递请放前台，勿打电话
     @PostMapping("/chatWithAssistant")
     @ResponseBody
-    public String chatWithAssistant(@RequestBody ChatMessagesDto requestDto) {
+    public ChatResult chatWithAssistant(@RequestBody ChatMessagesDto requestDto) {
         // chatMasterAgent.chat(requestDto.getMessage())
 
 //        boolean isSayHello = localAgent.isSayHello(requestDto.getMessage());
@@ -195,7 +229,7 @@ public class BasicController {
         Result<String> result = chatAssistant.chat(1111, userMessageName, userMessage);
         // Result<String> resultDemo = chatMasterAgent.chatDemo(requestDto.getMessage());
 
-        return result.content();
+        return new ChatResult(false, null, result.content());
 //        boolean isSayHello = chatMasterAgent.isSayHello(requestDto.getMessage());
 //
 //        return isSayHello ? "欢迎来到智能客服系统" : "...";
@@ -208,7 +242,7 @@ public class BasicController {
     // http://localhost:8080/index.html
     @PostMapping("/chatWithNative")
     @ResponseBody
-    public String chatWithNative(@RequestBody ChatMessagesDto requestDto) {
+    public ChatResult chatWithNative(@RequestBody ChatMessagesDto requestDto) {
         Assert.notNull(requestDto, "Assert.notNull: requestDto");
         Assert.hasText(requestDto.getMessage(), "Assert.hasText: requestDto.getMessage()");
 
@@ -266,13 +300,13 @@ public class BasicController {
             chatMemory.add(aiMessage);
 
             if (CollectionUtils.isEmpty(aiMessage.toolExecutionRequests())) {
-                return aiMessage.text();
+                return new ChatResult(false, null, aiMessage.text());
             }
 
             // 限制和LLM交互次数
             times++;
             if (10 < times) {
-                return "超过和LLM交互的最大次数。请重试！";
+                return new ChatResult(false, null, "超过和LLM交互的最大次数。请重试！");
             }
 
             for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {

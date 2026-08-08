@@ -12,4 +12,7 @@ public class ChatMessagesDto implements Serializable {
     private String documentName;
     private boolean anthropicApiAdapter = false;
     private boolean reranked = false;
+
+    private String memoryId;
+    private String answer;
 }
