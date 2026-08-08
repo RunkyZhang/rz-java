@@ -9,7 +9,9 @@ import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,9 +64,11 @@ public class WebTools {
     }
 
     @Tool("通过阿里云百炼 MCP 获取网页内容")
-    public String fetch(@P("要获取的 URL") String url) throws Exception {
-        McpTransport transport = StreamableHttpMcpTransport.builder()
-                .url("https://dashscope.aliyuncs.com/api/v1/mcps/WebParser/sse")
+    @SuppressWarnings("removal")
+    public String parser(@P("要获取的 URL") String url) throws Exception {
+        // HttpMcpTransport被Deprecated弃用了。但是这个mcp就是用sse协议，所以只能使用HttpMcpTransport
+        McpTransport transport = HttpMcpTransport.builder()
+                .sseUrl("https://dashscope.aliyuncs.com/api/v1/mcps/WebParser/sse")
                 .customHeaders(Map.of("Authorization", "Bearer " + getApiKey()))
                 .timeout(Duration.ofSeconds(30))
                 .build();
@@ -74,20 +78,34 @@ public class WebTools {
                 .transport(transport)
                 .build()) {
 
-            String toolName = mcpClient.listTools().stream()
-                    .filter(t -> t.name().toLowerCase().contains("fetch") || t.name().toLowerCase().contains("parser"))
+            ToolSpecification toolSpecification = mcpClient.listTools().stream()
+                    .filter(o -> {
+                        if (null == o || StringUtils.isBlank(o.name())) {
+                            return false;
+                        }
+
+                        return o.name().toLowerCase().contains("fetch") || o.name().toLowerCase().contains("parser");
+                    })
                     .findFirst()
-                    .map(ToolSpecification::name)
-                    .orElseThrow();
-            log.info("WebParser tool: {}", toolName);
+                    .orElse(null);
+
+            if (null == toolSpecification) {
+                return "cannot to parser(fetch) web; the mcp is not a web parser(fetch) tool";
+            }
+            log.info("tool name: {}", toolSpecification.name());
 
             String arguments = JacksonHelper.toJson(Map.of("url", url), false);
             ToolExecutionRequest request = ToolExecutionRequest.builder()
-                    .name(toolName)
+                    .name(toolSpecification.name())
                     .arguments(arguments)
                     .build();
 
-            return mcpClient.executeTool(request, null).toString();
+            ToolExecutionResult toolExecutionResult = mcpClient.executeTool(request, null);
+            if (null == toolExecutionResult || toolExecutionResult.isError()) {
+                return "failed to parser url: " + url;
+            } else {
+                return toolExecutionResult.toString();
+            }
         }
     }
 }
