@@ -86,7 +86,7 @@ import java.util.stream.Collectors;
 @Controller
 public class BasicController {
     private static Map<String, DocumentDto> savedDocuments = new HashMap<>();
-    private final Map<String, ResultWithAgenticScope<String>> suspendedResults = new ConcurrentHashMap<>();
+    private final Map<String, ResultWithAgenticScope<String>> resultWithAgenticScopeSessions = new ConcurrentHashMap<>();
 
     @Value("${ai.rag.withInMemoryEmbeddingStore.switch:false}")
     private boolean withInMemoryEmbeddingStore;
@@ -140,37 +140,44 @@ public class BasicController {
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
-    // 测试：simpleHarnessAgent：帮我发一条企业微信消息，内容是hello。会交互让输入发给谁
+    // 测试：帮我发一条企业微信消息，内容是hello；
+    //   回复：张仁杰
+    // 测试：帮我查一下我本地操作系统时间是什么？
+    //   追问：你执行的什么命令查询的系统时间？
     @PostMapping("/chat")
     @ResponseBody
     public ChatResult chatWithHarness(@RequestBody ChatMessagesDto requestDto) {
         String memoryId = UUID.randomUUID().toString();
-        ResultWithAgenticScope<String> result = simpleHarnessAgent.chat(memoryId, requestDto.getMessage());
-        if (result.suspended()) {
-            suspendedResults.put(memoryId, result);
-            String question = result.agenticScope().readState("pendingQuestion", "");
-            log.info("HITL question: {}", question);
-            return new ChatResult(true, memoryId, question);
+        ResultWithAgenticScope<String> resultWithAgenticScope = simpleHarnessAgent.chat(memoryId, requestDto.getMessage());
+        // 是否需要挂起暂停（这里是等待人工输入）
+        if (resultWithAgenticScope.suspended()) {
+            resultWithAgenticScopeSessions.put(memoryId, resultWithAgenticScope);
+            // 获取让用户输入的问题
+            String pendingQuestion = resultWithAgenticScope.agenticScope().readState("pendingQuestion", "");
+            return new ChatResult(true, memoryId, pendingQuestion);
         }
-        return new ChatResult(false, null, result.result());
+        return new ChatResult(false, null, resultWithAgenticScope.result());
     }
 
     @PostMapping("/chatWaitAnswered")
     @ResponseBody
     public ChatResult chatWaitAnswered(@RequestBody ChatMessagesDto chatMessagesDto) {
-        ResultWithAgenticScope<String> result = suspendedResults.remove(chatMessagesDto.getMemoryId());
-        if (result == null) {
+        ResultWithAgenticScope<String> resultWithAgenticScope = resultWithAgenticScopeSessions.remove(chatMessagesDto.getMemoryId());
+        if (null== resultWithAgenticScope) {
             return new ChatResult(false, null, "会话已过期或不存在，请重新提问");
         }
-        result.agenticScope().writeState("userInput", chatMessagesDto.getAnswer());
-        result = result.completePendingResponse(chatMessagesDto.getAnswer());
-        if (result.suspended()) {
-            suspendedResults.put(chatMessagesDto.getMemoryId(), result);
-            String question = result.agenticScope().readState("pendingQuestion", "");
-            log.info("HITL question: {}", question);
-            return new ChatResult(true, chatMessagesDto.getMemoryId(), question);
+
+        resultWithAgenticScope.agenticScope().writeState("userReply", chatMessagesDto.getAnswer());
+        // completePendingResponse：通知agent的planner用户已经输入。同时完成pending，继续自行
+        resultWithAgenticScope = resultWithAgenticScope.completePendingResponse(chatMessagesDto.getAnswer());
+        // 是否需要挂起暂停（这里是等待人工输入）
+        // 在此处，用户回答了问题，但是并没有回答全，或驴唇不对马嘴，agent的panner会继续挂起暂停等待人工输入
+        if (resultWithAgenticScope.suspended()) {
+            resultWithAgenticScopeSessions.put(chatMessagesDto.getMemoryId(), resultWithAgenticScope);
+            String pendingQuestion = resultWithAgenticScope.agenticScope().readState("pendingQuestion", "");
+            return new ChatResult(true, chatMessagesDto.getMemoryId(), pendingQuestion);
         }
-        return new ChatResult(false, null, result.result());
+        return new ChatResult(false, null, resultWithAgenticScope.result());
     }
 
     // 测试SimpleSequenceAgent(会生成树)：《最远的距离》小说中涉及到哪些地址

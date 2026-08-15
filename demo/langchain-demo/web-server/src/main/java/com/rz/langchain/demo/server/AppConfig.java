@@ -92,19 +92,17 @@ public class AppConfig {
                 .description("当执行任务缺少必要信息（如收件人、地址、确认指令等）时，向用户提问以获取缺失信息")
                 .outputKey("userAnswer")
                 // planner 把要问的问题传进来，放到agenticScope.state 中
-                .inputKey(String.class, "question")
+                .inputKey(String.class, "pendingQuestion")
                 // 获取用户输入
                 .responseProvider(agenticScope -> {
-                    // 恢复时：chatResume 已把用户回答写入 scope["userInput"]
-                    Object answer = agenticScope.readState("userInput", null);
-                    log.info("HITL responseProvider: userInput={}", answer);
-                    if (answer != null) {
-                        agenticScope.writeState("userInput", null);
-                        return answer;
+                    // 恢复时：chatResume 已把用户回答写入 scope["userReply"]
+                    String userReply = agenticScope.readState("userReply", "");
+                    if (!StringUtils.isBlank(userReply)) {
+                        // 清空userReply。避免和用户下次输入混淆
+                        agenticScope.writeState("userReply", null);
+                        return userReply;
                     }
-                    // 首次：suspend 问用户
-                    String question = agenticScope.readState("question", "请补充信息");
-                    agenticScope.writeState("pendingQuestion", question);
+
                     return new SuspendedResponse<>("user-input");
                 })
                 .build();
@@ -118,10 +116,11 @@ public class AppConfig {
                 // SUMMARIZATION：chatMemory + Summarizer（把与各 subagent 的交互压缩成摘要注入请求）
                 // CHAT_MEMORY_AND_SUMMARIZATION：同上（在已传 chatMemoryProvider 的情况下，和 SUMMARIZATION 效果一样）
                 .contextGenerationStrategy(SupervisorContextStrategy.CHAT_MEMORY)
-                // LAST（默认）：直接返回最后一个被调 subagent 的输出，不额外调 LLM
+                // LAST（默认）：直接返回最后一个被调 subagent 的输出，不额外调 LLM。
+                //   缺点：planner 直接返回 done（本轮没调任何 subagent）时无内容可返回
                 // SUMMARY：返回 planner 决定 done 时生成的 response（对全部交互的回顾总结）
                 // SCORED：额外用一次 LLM 给"最后 subagent 输出"和"planner 总结"打分，返回分高的（最稳但最贵）
-                .responseStrategy(SupervisorResponseStrategy.LAST)
+                .responseStrategy(SupervisorResponseStrategy.SUMMARY)
                 .maxAgentsInvocations(30)
                 .outputKey("response")
                 .build();
