@@ -81,6 +81,11 @@ public class AppConfig {
     private boolean withInMemoryEmbeddingStore;
 
 
+    // supervisor while循环在 PlannerBasedInvocationHandler.PlannerLoop.loop()
+    // 三个退出条件总结：
+    // 1. planner 返回 agentName="done"；代码在nextSubagent():156；正常完成任务退出，看responseStrategy
+    // 2. loopCount >= 30；代码在nextAction():103；强制超限保护，看fallback lastResponse
+    // 3. 有挂起的 SuspendedResponse（Human-in-the-loop）；代码在loop():404；挂起等待用户输入
     @Bean
     public SimpleHarnessAgent simpleHarnessAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
                                                  @Qualifier("chatMemory-default") ChatMemory chatMemory,
@@ -90,7 +95,6 @@ public class AppConfig {
                                                  NotifyAgent notifyAgent) {
         HumanInTheLoop humanInTheLoop = AgenticServices.humanInTheLoopBuilder()
                 .description("当执行任务缺少必要信息（如收件人、地址、确认指令等）时，向用户提问以获取缺失信息")
-                .outputKey("userAnswer")
                 // planner 把要问的问题传进来，放到agenticScope.state 中
                 .inputKey(String.class, "pendingQuestion")
                 // 获取用户输入
@@ -103,8 +107,11 @@ public class AppConfig {
                         return userReply;
                     }
 
+                    // supervisor while循环中判断如果agenticScope.state().values()中有SuspendedResponse就退出（挂起），等待用户输入
+                    // agenticScope.state的KV是：userAnswer：new SuspendedResponse<>("user-input")
                     return new SuspendedResponse<>("user-input");
                 })
+                .outputKey("userAnswer")
                 .build();
 
         return AgenticServices.supervisorBuilder(SimpleHarnessAgent.class)
@@ -170,7 +177,6 @@ public class AppConfig {
                 .chatModel(model)
                 .chatMemory(defaultChatMemory)
                 .tools(wcImTools)
-                .outputKey("response")
                 .build();
     }
 

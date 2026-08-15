@@ -140,10 +140,11 @@ public class BasicController {
 
     // TODO：session隔离查看代码 /customerSupportAgent
 
-    // 测试：帮我发一条企业微信消息，内容是hello；
+    // 测试：帮我发一条企业微信消息，内容是hello
     //   回复：张仁杰
     // 测试：帮我查一下我本地操作系统时间是什么？
     //   追问：你执行的什么命令查询的系统时间？
+    // 测试：帮我查一下我本地操作系统时间，然后写到/tmp/aaa.txt中
     @PostMapping("/chat")
     @ResponseBody
     public ChatResult chatWithHarness(@RequestBody ChatMessagesDto requestDto) {
@@ -167,9 +168,9 @@ public class BasicController {
             return new ChatResult(false, null, "会话已过期或不存在，请重新提问");
         }
 
-        resultWithAgenticScope.agenticScope().writeState("userReply", chatMessagesDto.getAnswer());
+        resultWithAgenticScope.agenticScope().writeState("userReply", chatMessagesDto.getReplay());
         // completePendingResponse：通知agent的planner用户已经输入。同时完成pending，继续自行
-        resultWithAgenticScope = resultWithAgenticScope.completePendingResponse(chatMessagesDto.getAnswer());
+        resultWithAgenticScope = resultWithAgenticScope.completePendingResponse(chatMessagesDto.getReplay());
         // 是否需要挂起暂停（这里是等待人工输入）
         // 在此处，用户回答了问题，但是并没有回答全，或驴唇不对马嘴，agent的panner会继续挂起暂停等待人工输入
         if (resultWithAgenticScope.suspended()) {

@@ -14,5 +14,5 @@ public class ChatMessagesDto implements Serializable {
     private boolean reranked = false;
 
     private String memoryId;
-    private String answer;
+    private String replay;
 }

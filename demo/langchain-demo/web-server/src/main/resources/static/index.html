@@ -589,7 +589,7 @@
                 response = await fetch('/chatWaitAnswered', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ memoryId: suspendedMemoryId, answer: message })
+                    body: JSON.stringify({ memoryId: suspendedMemoryId, replay: message })
                 });
             } else {
                 // 新对话
