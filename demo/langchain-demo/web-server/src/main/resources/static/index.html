@@ -155,6 +155,22 @@
             justify-content: flex-start;
         }
 
+        .message.ai-question {
+            justify-content: flex-start;
+        }
+
+        .message.ai-question .message-content {
+            background: linear-gradient(135deg, #ffb347 0%, #ff6b6b 100%);
+            color: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.35);
+        }
+
+        .message.ai-question .message-content p {
+            margin: 4px 0;
+            font-size: 16px;
+        }
+
         .message-content {
             max-width: 85%;
             padding: 16px 22px;
@@ -292,6 +308,15 @@
             border-color: #667eea;
         }
 
+        .chat-input.pending {
+            border-color: #ffb347;
+            background: #fff8f0;
+        }
+
+        .chat-input.pending:focus {
+            border-color: #ff6b6b;
+        }
+
         .send-button {
             padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -317,6 +342,14 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .send-button.pending {
+            background: linear-gradient(135deg, #ffb347 0%, #ff6b6b 100%);
+        }
+
+        .send-button.pending:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
 
         .ingest-button {
@@ -531,9 +564,9 @@
         }
     }
 
-    function addMessage(content, isUser) {
+    function addMessage(content, isUser, isQuestion) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+        messageDiv.className = isUser ? 'message user' : (isQuestion ? 'message ai-question' : 'message ai');
 
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
@@ -541,7 +574,8 @@
         if (isUser) {
             messageContent.textContent = content;
         } else {
-            messageContent.innerHTML = marked.parse(content);
+            // 提问消息是纯文本（pendingQuestion），agent 回复才解析 markdown
+            messageContent.innerHTML = isQuestion ? content : marked.parse(content);
         }
 
         messageDiv.appendChild(messageContent);
@@ -572,6 +606,20 @@
     }
 
     let suspendedMemoryId = null;
+
+    function setPendingUI(pending) {
+        if (pending) {
+            chatInput.classList.add('pending');
+            sendButton.classList.add('pending');
+            sendButton.textContent = '回答';
+            chatInput.placeholder = '请输入你的回答...';
+        } else {
+            chatInput.classList.remove('pending');
+            sendButton.classList.remove('pending');
+            sendButton.textContent = '发送';
+            chatInput.placeholder = '输入你的问题...';
+        }
+    }
 
     async function sendMessage() {
         const message = chatInput.value.trim();
@@ -620,24 +668,24 @@
             if (parsed && parsed.waitAnswered) {
                 // AI 在等用户回答，展示 content 中的问题
                 suspendedMemoryId = parsed.memoryId;
-                addMessage('🤔 ' + parsed.content, false);
-                chatInput.placeholder = '请输入你的回答...';
+                addMessage('🤔 ' + parsed.content, false, true);
+                setPendingUI(true);
             } else if (parsed && parsed.content !== undefined) {
                 // ChatResult 正常完成
                 suspendedMemoryId = null;
-                chatInput.placeholder = '输入你的问题...';
-                addMessage(parsed.content, false);
+                setPendingUI(false);
+                addMessage(parsed.content, false, false);
             } else {
                 // 兼容纯文本
                 suspendedMemoryId = null;
-                chatInput.placeholder = '输入你的问题...';
-                addMessage(data, false);
+                setPendingUI(false);
+                addMessage(data, false, false);
             }
         } catch (error) {
             hideLoading();
             suspendedMemoryId = null;
-            chatInput.placeholder = '输入你的问题...';
-            addMessage('抱歉，发生了错误，请稍后重试。', false);
+            setPendingUI(false);
+            addMessage('抱歉，发生了错误，请稍后重试。', false, false);
             console.error('Error:', error);
         } finally {
             sendButton.disabled = false;
