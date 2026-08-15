@@ -83,9 +83,46 @@ public class AppConfig {
 
     // supervisor while循环在 PlannerBasedInvocationHandler.PlannerLoop.loop()
     // 三个退出条件总结：
-    // 1. planner 返回 agentName="done"；代码在nextSubagent():156；正常完成任务退出，看responseStrategy
+    // 1. planner 返回 agentName="done"；代码在nextSubagent():156；正常完成任务退出
     // 2. loopCount >= 30；代码在nextAction():103；强制超限保护，看fallback lastResponse
     // 3. 有挂起的 SuspendedResponse（Human-in-the-loop）；代码在loop():404；挂起等待用户输入
+    // =====
+    // planner agent会把全部sub agent做成使用描述list。用于生成prompt给到LLM
+    // =====
+    // supervisorContext设置规约用于生成prompt给到LLM
+    // =====
+    // planner agent会添加以下prompt。来判断是否完成任务（符合第1退出条件）
+    // If no further agent requests are required, return an agentName of "done" and an argument named
+    // "response", where the value of the response argument is a recap of all the performed actions.
+    // ===================== planner agent完整prompt=========================
+    // 你是一位规划专家，手头有一组可调用的agent。
+    // 你对任何领域都没有先验知识，也不对用户请求做任何假设，
+    // 你唯一能做的，就是依赖所提供的这些智能体来完成工作。
+    //
+    // 你的职责是：分析用户的请求，并决定下一步应该调用哪个智能体来处理该请求。
+    // 你需要返回一个“智能体调用”结果，其中包含要调用的智能体名称，以及传递给它的参数。
+    //
+    // 如果不需要再调用任何agent，则返回 `agentName` 为 `"done"`，并附带一个名为 `"response"` 的参数，
+    // 该参数的值为对已执行所有操作的总结回顾，且必须使用与用户请求相同的语言书写。
+    //
+    // 每个智能体都提供了其名称、描述，以及适用参数的列表，格式如下：
+    // `{'name', 'description', [参数1: 类型1, 参数2: 类型2]}`
+    //
+    // 请以小步快跑的方式决定下一个要调用的智能体，不要走捷径，也不要依赖你自身的知识。
+    // 即使用户的请求已经非常明确，也不要自作主张，务必使用智能体来处理。
+    // 务必确保查询了所有必要的agent。
+    //
+    // 当前可用的agent列表（逗号分隔）为：
+    //  - `{'askUser$0', '当执行任务缺少必要信息（如收件人、地址、确认指令等）时，向用户提问以获取缺失信息', [pendingQuestion: String]}`
+    //  - `{'file_specialist$1', '文件操作专家：读取、写入、编辑、搜索。', [task: String]}`
+    //  - `{'system_specialist$2', 'Shell命令执行与环境管理专家。', [task: String]}`
+    //  - `{'web_specialist$3', '网页搜索与URL内容获取专家。', [task: String]}`
+    //  - `{'notify_specialist$4', '通信专家：能查找通信人，能通过各种渠道发送消息，目前只支持企业微信（WcIm）', [task: String]}`
+    //
+    // 在制定计划时，请参考以下监督者上下文，以更好地理解约束、策略或偏好：
+    // `策略：优先使用内部工具；Thinking（思考）使用中文`
+    // =================================================================
+    //
     @Bean
     public SimpleHarnessAgent simpleHarnessAgent(@Qualifier("deepSeek_v4_flash") AnthropicChatModel model,
                                                  @Qualifier("chatMemory-default") ChatMemory chatMemory,
